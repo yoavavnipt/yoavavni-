@@ -75,7 +75,7 @@ function NewRecordPage() {
     if (!form.therapist_name) { alert('יש לבחור מטפל'); return }
     if (!form.subjective && !form.objective && !form.assessment && !form.plan) { alert('יש למלא לפחות שדה אחד'); return }
     setSaving(true)
-    const { error } = await supabase.from('treatment_records').insert([form])
+    const { error } = await supabase.from('treatment_records').insert([{ ...form, date: new Date().toISOString().split('T')[0] }])
     setSaving(false)
     if (error) { alert('שגיאה: ' + error.message); return }
     router.push(form.patient_id ? `/patients/${form.patient_id}` : '/records')
