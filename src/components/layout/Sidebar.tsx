@@ -19,6 +19,7 @@ const NAV = [
   ]},
   { section: 'ניהול', items: [
     { href: '/reports',   icon: '📈', label: 'דוחות' },
+    { href: '/admin',     icon: '👤', label: 'משתמשים' },
     { href: '/settings',  icon: '⚙️',  label: 'הגדרות' },
   ]},
 ]
