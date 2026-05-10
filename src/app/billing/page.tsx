@@ -90,9 +90,9 @@ export default function BillingPage() {
               padding: '14px 18px', borderBottom: i < records.length - 1 ? '1px solid #f8fafc' : 'none'
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '600', fontSize: '13px' }}>
+                <Link href={`/patients/${r.patient_id}`} style={{ fontWeight: '600', fontSize: '13px', color: '#1a3a5c', textDecoration: 'none' }}>
                   {r.patient?.first_name} {r.patient?.last_name}
-                </div>
+                </Link>
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>
                   {r.description || 'טיפול'} · {new Date(r.created_at).toLocaleDateString('he-IL')}
                 </div>

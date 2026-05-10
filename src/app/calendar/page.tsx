@@ -132,9 +132,9 @@ export default function CalendarPage() {
                   {a.service?.icon || '🏥'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '600', fontSize: '13px' }}>
+                  <Link href={`/patients/${a.patient_id}`} style={{ fontWeight: '600', fontSize: '13px', color: '#1a3a5c', textDecoration: 'none' }}>
                     {a.patient?.first_name} {a.patient?.last_name}
-                  </div>
+                  </Link>
                   <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
                     {a.service?.name_he || 'טיפול'}
                     {a.price && ` · ₪${a.price}`}

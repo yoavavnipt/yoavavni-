@@ -103,7 +103,9 @@ export default function PatientsPage() {
                   {patients.map((p, i) => (
                     <tr key={p.id} style={{ borderBottom: '1px solid #f8fafc', background: i % 2 === 0 ? '#fff' : '#fafcff' }}>
                       <td style={{ padding: '12px 14px' }}>
-                        <div style={{ fontWeight: '600' }}>{p.first_name} {p.last_name}</div>
+                        <Link href={`/patients/${p.id}`} style={{ fontWeight: '600', color: '#1a3a5c', textDecoration: 'none' }}>
+                          {p.first_name} {p.last_name}
+                        </Link>
                         {p.id_number && <div style={{ fontSize: '11px', color: '#94a3b8' }}>ת.ז. {p.id_number}</div>}
                       </td>
                       <td style={{ padding: '12px 14px' }}>

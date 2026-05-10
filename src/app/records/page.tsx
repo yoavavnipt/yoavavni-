@@ -62,9 +62,9 @@ export default function RecordsPage() {
               <div key={r.id} style={{ background: '#fff', borderRadius: '10px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                   <div>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c' }}>
+                    <Link href={`/patients/${r.patient_id}`} style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c', textDecoration: 'none' }}>
                       {r.patient?.first_name} {r.patient?.last_name}
-                    </div>
+                    </Link>
                     <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
                       {new Date(r.created_at).toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
