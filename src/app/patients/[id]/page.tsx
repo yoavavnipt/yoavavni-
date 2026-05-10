@@ -111,23 +111,37 @@ export default function PatientProfilePage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<any>({})
-  const [tab, setTab] = useState<'overview'|'intake'|'appointments'|'records'|'billing'>('overview')
+  const [tab, setTab] = useState<'overview'|'intake'|'goals'|'appointments'|'records'|'billing'>('overview')
   const [intake, setIntake] = useState<any>({})
   const [intakeSaving, setIntakeSaving] = useState(false)
+  const [goals, setGoals] = useState<any[]>([])
+  const [showGoalForm, setShowGoalForm] = useState(false)
+  const [goalSaving, setGoalSaving] = useState(false)
+  const [goalForm, setGoalForm] = useState({ action: '', measure: '', difficulty: 'ללא קושי', target_date: '', notes: '' })
+  const [updateText, setUpdateText] = useState<Record<string,string>>({})
+  const [goalUpdates, setGoalUpdates] = useState<Record<string,any[]>>({})
 
   useEffect(() => { if (id) loadAll() }, [id])
 
   async function loadAll() {
-    const [{ data: p }, { data: a }, { data: r }, { data: b }] = await Promise.all([
+    const [{ data: p }, { data: a }, { data: r }, { data: b }, { data: g }] = await Promise.all([
       supabase.from('patients').select('*').eq('id', id).single(),
       supabase.from('appointments').select('*, service:service_types(name_he,icon,color)').eq('patient_id', id).order('date', { ascending: false }).limit(20),
       supabase.from('treatment_records').select('*').eq('patient_id', id).order('created_at', { ascending: false }).limit(20),
       supabase.from('billing_records').select('*').eq('patient_id', id).order('created_at', { ascending: false }).limit(20),
+      supabase.from('treatment_goals').select('*').eq('patient_id', id).order('created_at'),
     ])
     setPatient(p); setForm(p || {})
     setAppointments(a || []); setRecords(r || []); setBilling(b || [])
-    // Load intake from patient data
+    setGoals(g || [])
     if (p?.intake_data) { try { setIntake(JSON.parse(p.intake_data)) } catch {} }
+    // Load goal updates
+    if (g && g.length > 0) {
+      const { data: updates } = await supabase.from('goal_updates').select('*').in('goal_id', g.map((x:any)=>x.id)).order('date')
+      const map: Record<string,any[]> = {}
+      ;(updates||[]).forEach((u:any) => { if(!map[u.goal_id]) map[u.goal_id]=[]; map[u.goal_id].push(u) })
+      setGoalUpdates(map)
+    }
     setLoading(false)
   }
 
@@ -150,6 +164,31 @@ export default function PatientProfilePage() {
     alert('ראיון הקבלה נשמר!')
   }
 
+  const setG = (f: string, v: string) => setGoalForm(p => ({ ...p, [f]: v }))
+
+  async function saveGoal() {
+    if (!goalForm.action || !goalForm.measure) { alert('יש למלא פעולה ומדד'); return }
+    setGoalSaving(true)
+    await supabase.from('treatment_goals').insert([{ ...goalForm, patient_id: id }])
+    setGoalSaving(false)
+    setShowGoalForm(false)
+    setGoalForm({ action: '', measure: '', difficulty: 'ללא קושי', target_date: '', notes: '' })
+    loadAll()
+  }
+
+  async function updateGoalStatus(goalId: string, status: string) {
+    await supabase.from('treatment_goals').update({ status }).eq('id', goalId)
+    loadAll()
+  }
+
+  async function addGoalUpdate(goalId: string) {
+    const text = updateText[goalId]
+    if (!text) return
+    await supabase.from('goal_updates').insert([{ goal_id: goalId, note: text }])
+    setUpdateText(p => ({ ...p, [goalId]: '' }))
+    loadAll()
+  }
+
   const totalPaid = billing.filter(b => b.status === 'paid').reduce((s, b) => s + (b.amount || 0), 0)
 
   if (loading) return <AppLayout><div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', color:'#94a3b8' }}>טוען...</div></AppLayout>
@@ -158,6 +197,7 @@ export default function PatientProfilePage() {
   const tabs = [
     { key: 'overview',     label: 'סקירה כללית' },
     { key: 'intake',       label: '📋 ראיון קבלה' },
+    { key: 'goals',        label: `🎯 מטרות (${goals.length})` },
     { key: 'appointments', label: `תורים (${appointments.length})` },
     { key: 'records',      label: `SOAP (${records.length})` },
     { key: 'billing',      label: `חיוב (${billing.length})` },
@@ -369,6 +409,140 @@ export default function PatientProfilePage() {
                 {intakeSaving?'⏳ שומר...':'💾 שמור ראיון קבלה'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* GOALS */}
+        {tab === 'goals' && (
+          <div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
+              <div style={{ fontSize:'14px', fontWeight:'700', color:'#1a3a5c' }}>מטרות טיפול SMART</div>
+              <button onClick={() => setShowGoalForm(true)} style={{ padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                + מטרה חדשה
+              </button>
+            </div>
+
+            {/* New goal form */}
+            {showGoalForm && (
+              <div style={{ background:'#fff', borderRadius:'12px', padding:'18px', marginBottom:'14px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', border:'2px solid #3eb8e5' }}>
+                <div style={{ fontWeight:'700', fontSize:'13px', color:'#1a3a5c', marginBottom:'14px' }}>🎯 מטרה חדשה</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+                  <div>
+                    <label style={lbl}>פעולה — מה המטופל יעשה</label>
+                    <input style={inp} value={goalForm.action} onChange={e=>setG('action',e.target.value)} placeholder="ילך, ירוץ, יעלה מדרגות, ירים משקל..." />
+                  </div>
+                  <div>
+                    <label style={lbl}>מדד — כמה / כמה זמן</label>
+                    <input style={inp} value={goalForm.measure} onChange={e=>setG('measure',e.target.value)} placeholder="10 דקות, 500 מטר, 15 קילו, 90 מעלות..." />
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
+                    <div>
+                      <label style={lbl}>רמת קושי</label>
+                      <select style={inp} value={goalForm.difficulty} onChange={e=>setG('difficulty',e.target.value)}>
+                        <option>ללא קושי</option>
+                        <option>עם קושי קל</option>
+                        <option>באופן עצמאי</option>
+                        <option>עם עזר חיצוני</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={lbl}>תאריך יעד</label>
+                      <input type="date" style={inp} value={goalForm.target_date} onChange={e=>setG('target_date',e.target.value)} />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={lbl}>הערות</label>
+                    <input style={inp} value={goalForm.notes} onChange={e=>setG('notes',e.target.value)} placeholder="הקשר קליני, רלוונטיות תפקודית..." />
+                  </div>
+                  <div style={{ display:'flex', gap:'8px', marginTop:'4px' }}>
+                    <button onClick={() => setShowGoalForm(false)} style={{ padding:'9px 16px', border:'1px solid #e2e8f0', borderRadius:'8px', background:'#fff', fontSize:'13px', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>ביטול</button>
+                    <button onClick={saveGoal} disabled={goalSaving} style={{ flex:1, padding:'9px', background:goalSaving?'#94a3b8':'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                      {goalSaving ? '⏳ שומר...' : '💾 שמור מטרה'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Goals list */}
+            {goals.length === 0 && !showGoalForm ? (
+              <div style={{ background:'#fff', borderRadius:'12px', padding:'40px', textAlign:'center', color:'#94a3b8', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize:'32px', marginBottom:'8px' }}>🎯</div>
+                <div>אין מטרות טיפול עדיין</div>
+                <button onClick={() => setShowGoalForm(true)} style={{ marginTop:'12px', padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                  הגדר מטרה ראשונה
+                </button>
+              </div>
+            ) : goals.map(g => {
+              const updates = goalUpdates[g.id] || []
+              const statusColors: Record<string,{bg:string;color:string}> = {
+                'בתהליך':  { bg:'#fef3c7', color:'#92400e' },
+                'הושג':    { bg:'#d1fae5', color:'#065f46' },
+                'עודכן':   { bg:'#dbeafe', color:'#1e40af' },
+                'לא הושג': { bg:'#fee2e2', color:'#991b1b' },
+              }
+              const sc = statusColors[g.status] || { bg:'#f1f5f9', color:'#475569' }
+              return (
+                <div key={g.id} style={{ background:'#fff', borderRadius:'12px', padding:'16px', marginBottom:'10px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', borderRight: g.status === 'הושג' ? '4px solid #10b981' : '4px solid #3eb8e5' }}>
+                  {/* Goal header */}
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontWeight:'800', fontSize:'15px', color:'#1a3a5c' }}>
+                        {g.status === 'הושג' ? '✅ ' : '🎯 '}
+                        {g.action} — {g.measure}
+                      </div>
+                      <div style={{ fontSize:'12px', color:'#64748b', marginTop:'3px' }}>
+                        {g.difficulty}
+                        {g.target_date && ` · יעד: ${new Date(g.target_date).toLocaleDateString('he-IL')}`}
+                      </div>
+                      {g.notes && <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>{g.notes}</div>}
+                    </div>
+                    <select value={g.status} onChange={e => updateGoalStatus(g.id, e.target.value)} style={{
+                      padding:'4px 8px', border:`1px solid ${sc.color}30`, borderRadius:'20px',
+                      fontSize:'11px', fontWeight:'700', cursor:'pointer',
+                      background: sc.bg, color: sc.color, fontFamily:'Heebo, sans-serif', outline:'none', marginRight:'8px'
+                    }}>
+                      <option>בתהליך</option>
+                      <option>הושג</option>
+                      <option>עודכן</option>
+                      <option>לא הושג</option>
+                    </select>
+                  </div>
+
+                  {/* Updates timeline */}
+                  {updates.length > 0 && (
+                    <div style={{ marginBottom:'10px', padding:'10px', background:'#f8fafc', borderRadius:'8px' }}>
+                      <div style={{ fontSize:'10px', fontWeight:'700', color:'#94a3b8', marginBottom:'6px', textTransform:'uppercase' }}>היסטוריית עדכונים</div>
+                      {updates.map((u,i) => (
+                        <div key={u.id} style={{ display:'flex', gap:'8px', fontSize:'12px', marginBottom: i < updates.length-1 ? '6px' : '0' }}>
+                          <span style={{ color:'#94a3b8', flexShrink:0 }}>{new Date(u.date).toLocaleDateString('he-IL')}</span>
+                          <span style={{ color:'#374151' }}>{u.note}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add update */}
+                  {g.status !== 'הושג' && (
+                    <div style={{ display:'flex', gap:'8px' }}>
+                      <input
+                        value={updateText[g.id] || ''}
+                        onChange={e => setUpdateText(p => ({ ...p, [g.id]: e.target.value }))}
+                        onKeyDown={e => e.key === 'Enter' && addGoalUpdate(g.id)}
+                        placeholder="הוסף עדכון התקדמות..."
+                        style={{ ...inp, fontSize:'12px', flex:1 }}
+                      />
+                      <button onClick={() => addGoalUpdate(g.id)} style={{
+                        padding:'7px 14px', background:'#3eb8e5', color:'#fff', border:'none',
+                        borderRadius:'7px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif'
+                      }}>
+                        + עדכן
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 
