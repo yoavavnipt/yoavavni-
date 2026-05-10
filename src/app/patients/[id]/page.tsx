@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, HMO_OPTIONS, APPOINTMENT_STATUS } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import HEPPanel from '@/components/HEPPanel'
 
 const inp = { width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'13px', outline:'none', fontFamily:'Heebo, sans-serif', background:'#fff' } as const
 const ta = { ...{width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'13px', outline:'none', fontFamily:'Heebo, sans-serif', background:'#fff'}, minHeight:'80px', resize:'vertical' as const }
@@ -254,6 +255,7 @@ export default function PatientProfilePage() {
             })()}
             <Link href={`/records/new?patient=${id}`} style={{ padding:'8px 14px', background:'#7c3aed', color:'#fff', borderRadius:'8px', fontSize:'12px', fontWeight:'700' }}>+ SOAP</Link>
             <Link href={`/calendar/new?patient=${id}`} style={{ padding:'8px 14px', background:'#3eb8e5', color:'#fff', borderRadius:'8px', fontSize:'12px', fontWeight:'700' }}>+ תור</Link>
+            {patient && <HEPPanel patient={patient} />}
             <button onClick={() => setEditing(!editing)} style={{ padding:'8px 14px', background:editing?'#e2e8f0':'#1a3a5c', color:editing?'#475569':'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
               {editing ? 'ביטול' : '✏️ עריכה'}
             </button>
