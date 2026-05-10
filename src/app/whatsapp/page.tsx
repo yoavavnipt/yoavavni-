@@ -14,7 +14,19 @@ const T = [
   { id:'sport', l:'ברוך הבא — שיקום ספורטיבי', i:'⚽', c:'#c2410c', f:(p:any,d:string,t:string)=>`בוקר טוב ${p.first_name} ${p.last_name} 😊\n\nקבענו טיפול שיקום ספורטיבי בתאריך ${d} בשעה ${t}\nהטיפול אורך 45 דקות.\nעלות 380 ₪ לטיפול.\n\nנא להגיע עם בגדים ספורטיביים נוחים.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${FOOTER}`},
   { id:'online', l:'ברוך הבא — ייעוץ אונליין', i:'💻', c:'#065f46', f:(p:any,d:string,t:string)=>`בוקר טוב ${p.first_name} ${p.last_name} 😊\n\nקבענו ייעוץ אונליין בתאריך ${d} בשעה ${t}\nהייעוץ אורך כ-30 דקות.\nעלות 280 ₪.\n\nהפגישה תתקיים בוידאו — אשלח לך קישור לפני הפגישה.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${FOOTER}`},
   { id:'reminder', l:'תזכורת לתור', i:'⏰', c:'#7c3aed', f:(p:any,d:string,t:string)=>`שלום ${p.first_name} ${p.last_name} 😊\n\nתזכורת — יש לך תור מחר ${d} בשעה ${t}.\n\n📍 רחוב התרשיש 8, גילון\nלשינוי או ביטול — עד הערב ב-10:00.\n\nמחכים לך! 🙏\nקליניקת יואב אבני`},
-  { id:'payment', l:'בקשת תשלום', i:'💳', c:'#0b8a5e', f:(p:any,_d:string,_t:string,a?:string)=>`שלום ${p.first_name} ${p.last_name},\n\nבקשת תשלום עבור טיפול.\nסכום לתשלום: ₪${a||'___'}\n\nניתן לשלם:\n💵 מזומן בקליניקה\n💳 אשראי בקליניקה\n📱 ביט / פייבוקס: 054-5953889\n\nתודה! 🙏\nקליניקת יואב אבני`},
+  { id:'payment', l:'בקשת תשלום', i:'💳', c:'#0b8a5e', f:(p:any,_d:string,_t:string,a?:string)=>{
+    const links: Record<string,string> = {
+      '330': 'https://www.yoav-avni-clinic.com/_paylink/AZtZIkT9',
+      '360': 'https://www.yoav-avni-clinic.com/_paylink/AZvCL5XV',
+      '340': 'https://www.yoav-avni-clinic.com/_paylink/AZa0Pm4K',
+      '400': 'https://www.yoav-avni-clinic.com/_paylink/AZZsK6kw',
+      '1500': 'https://www.yoav-avni-clinic.com/_paylink/AZx5lGoD',
+      '650': 'https://www.yoav-avni-clinic.com/_paylink/AZ4TL4Bx',
+      '1000': 'https://www.yoav-avni-clinic.com/_paylink/AZ4TMBia',
+    }
+    const link = a ? (links[a] || '') : ''
+    return `שלום ${p.first_name} ${p.last_name},\n\nבקשת תשלום עבור טיפול.\nסכום לתשלום: ₪${a||'___'}${link ? `\n\n💳 לתשלום באשראי:\n${link}` : ''}\n\nאו:\n💵 מזומן בקליניקה\n📱 ביט / פייבוקס: 054-5953889\n\nתודה! 🙏\nקליניקת יואב אבני`
+  }},
   { id:'exercises', l:'תרגילי בית', i:'🏋️', c:'#854d0e', f:(p:any)=>`שלום ${p.first_name} ${p.last_name} 😊\n\nמצורפים תרגילי הבית שלך לביצוע עד הטיפול הבא.\nחשוב לבצע אותם כפי שהסברתי — כל יום או יומיים! 💪\n\nלשאלות — אני כאן.\nקליניקת יואב אבני`},
   { id:'book_again', l:'תזכורת לתור נוסף', i:'📅', c:'#3eb8e5', f:(p:any)=>`שלום ${p.first_name} ${p.last_name} 😊\n\nרציתי להזכיר — חשוב לשמור על רצף הטיפולים להחלמה מיטבית!\n\nלקביעת תור נוסף:\n📞 054-5953889\n🌐 https://www.yoav-avni-clinic.com\n\nנשמח לראותך בקרוב! 💪\nקליניקת יואב אבני`},
 ]

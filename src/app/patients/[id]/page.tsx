@@ -68,12 +68,36 @@ function buildReminderMsg(patient: any, nextAppt: any) {
 function buildPaymentMsg(patient: any, lastAppt: any) {
   const name = `${patient.first_name} ${patient.last_name}`
   const service = lastAppt?.service?.name_he || 'טיפול'
-  const price = getServicePrice(service, patient.city || '')
-  return `שלום ${name},\n\nתזכורת לתשלום עבור ${service}.\nסכום לתשלום: ₪${price}\n\nניתן לשלם:\n💵 מזומן בקליניקה\n💳 אשראי בקליניקה\n📱 ביט / פייבוקס: 054-5953889\n\nתודה! 🙏\nקליניקת יואב אבני`
+  const { price, link } = getPaymentLink(service, patient.city || '')
+  return `שלום ${name},\n\nתזכורת לתשלום עבור ${service}.\nסכום לתשלום: ₪${price}\n\n💳 לתשלום באשראי:\n${link}\n\nאו:\n💵 מזומן בקליניקה\n📱 ביט / פייבוקס: 054-5953889\n\nתודה! 🙏\nקליניקת יואב אבני`
 }
 
 function openWA(phone: string, msg: string) {
   window.open(`https://wa.me/${waPhone(phone)}?text=${encodeURIComponent(msg)}`, '_blank')
+}
+
+const PAYMENT_LINKS: Record<string, { price: number; link: string }> = {
+  'physio_local':  { price: 330,  link: 'https://www.yoav-avni-clinic.com/_paylink/AZtZIkT9' },
+  'physio':        { price: 360,  link: 'https://www.yoav-avni-clinic.com/_paylink/AZvCL5XV' },
+  'hydro':         { price: 340,  link: 'https://www.yoav-avni-clinic.com/_paylink/AZa0Pm4K' },
+  'home':          { price: 400,  link: 'https://www.yoav-avni-clinic.com/_paylink/AZZsK6kw' },
+  'ortho':         { price: 1500, link: 'https://www.yoav-avni-clinic.com/_paylink/AZx5lGoD' },
+  'run_basic':     { price: 650,  link: 'https://www.yoav-avni-clinic.com/_paylink/AZ4TL4Bx' },
+  'run_plus':      { price: 1000, link: 'https://www.yoav-avni-clinic.com/_paylink/AZ4TMBia' },
+  'run_premium':   { price: 1500, link: 'https://www.yoav-avni-clinic.com/_paylink/AZ4TMJ68' },
+}
+
+function getPaymentLink(serviceName: string, city: string): { price: number; link: string } {
+  if (!serviceName) return PAYMENT_LINKS['physio']
+  if ((serviceName.includes('פיזיו') && !serviceName.includes('מים')) && isLocal(city)) return PAYMENT_LINKS['physio_local']
+  if (serviceName.includes('פיזיו') && !serviceName.includes('מים')) return PAYMENT_LINKS['physio']
+  if (serviceName.includes('מים') || serviceName.includes('הידרו')) return PAYMENT_LINKS['hydro']
+  if (serviceName.includes('בית')) return PAYMENT_LINKS['home']
+  if (serviceName.includes('מדרס') || serviceName.includes('אורתו')) return PAYMENT_LINKS['ortho']
+  if (serviceName.includes('פרמיום') || serviceName.includes('1500')) return PAYMENT_LINKS['run_premium']
+  if (serviceName.includes('היברידית+') || serviceName.includes('1000')) return PAYMENT_LINKS['run_plus']
+  if (serviceName.includes('היברידית') || serviceName.includes('ריצה')) return PAYMENT_LINKS['run_basic']
+  return PAYMENT_LINKS['physio']
 }
 
 export default function PatientProfilePage() {
