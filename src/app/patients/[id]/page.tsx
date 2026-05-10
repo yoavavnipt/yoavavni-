@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, HMO_OPTIONS, APPOINTMENT_STATUS } from '@/lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import WhatsAppPanel from '@/components/WhatsAppPanel'
 
 const inp = {
   width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0',
@@ -106,12 +107,7 @@ export default function PatientProfilePage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {patient.phone && (
-              <a href={waLink(patient.phone)} target="_blank" rel="noreferrer" style={{
-                padding: '8px 14px', background: '#25d366', color: '#fff',
-                borderRadius: '8px', fontSize: '12px', fontWeight: '700'
-              }}>
-                WhatsApp
-              </a>
+              <WhatsAppPanel patient={patient} appointments={appointments} />
             )}
             <Link href={`/records/new?patient=${id}`} style={{
               padding: '8px 14px', background: '#7c3aed', color: '#fff',
