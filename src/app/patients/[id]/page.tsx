@@ -107,7 +107,12 @@ export default function PatientProfilePage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {patient.phone && (
-              <WhatsAppPanel patient={patient} appointments={appointments} />
+              <Link href={`/whatsapp?patient=${id}`} style={{
+                padding: '8px 14px', background: '#25d366', color: '#fff',
+                borderRadius: '8px', fontSize: '12px', fontWeight: '700'
+              }}>
+                💬 WhatsApp
+              </Link>
             )}
             <Link href={`/records/new?patient=${id}`} style={{
               padding: '8px 14px', background: '#7c3aed', color: '#fff',
