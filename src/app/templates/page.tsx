@@ -50,10 +50,6 @@ function saveTemplates(templates: typeof DEFAULT_TEMPLATES) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(templates)) } catch {}
 }
 
-export function getTemplates() {
-  return loadTemplates()
-}
-
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATES)
   const [selected, setSelected] = useState<string | null>(null)
