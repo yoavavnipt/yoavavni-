@@ -7,7 +7,7 @@ const MOBILE_NAV = [
   { href: '/patients',  icon: '👥', label: 'מטופלים' },
   { href: '/calendar',  icon: '📅', label: 'יומן' },
   { href: '/records',   icon: '📋', label: 'SOAP' },
-  { href: '/billing',   icon: '💰', label: 'חיוב' },
+  { href: '/whatsapp',  icon: '💬', label: 'הודעות' },
 ]
 
 export default function MobileNav() {

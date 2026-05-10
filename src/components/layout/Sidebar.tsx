@@ -13,6 +13,9 @@ const NAV = [
     { href: '/billing',   icon: '💰', label: 'חיוב וקבלות' },
     { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים' },
   ]},
+  { section: 'תקשורת', items: [
+    { href: '/whatsapp', icon: '💬', label: 'הודעות WhatsApp' },
+  ]},
   { section: 'ניהול', items: [
     { href: '/reports',   icon: '📈', label: 'דוחות' },
     { href: '/settings',  icon: '⚙️',  label: 'הגדרות' },
