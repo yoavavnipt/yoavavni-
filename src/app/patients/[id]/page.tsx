@@ -261,7 +261,7 @@ export default function PatientProfilePage() {
         </div>
 
         {/* Stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'14px' }}>
           {[
             { label:'סה"כ תורים', value:appointments.length, icon:'📅', color:'#3eb8e5' },
             { label:'טיפולים SOAP', value:records.length, icon:'📋', color:'#7c3aed' },
@@ -274,6 +274,54 @@ export default function PatientProfilePage() {
             </div>
           ))}
         </div>
+
+        {/* VAS Chart */}
+        {records.filter(r => r.vas_score != null).length > 1 && (() => {
+          const vasData = records.filter(r => r.vas_score != null).reverse()
+          const max = 10
+          const w = 400, h = 80
+          const pts = vasData.map((r, i) => ({
+            x: (i / Math.max(vasData.length - 1, 1)) * w,
+            y: h - (r.vas_score / max) * h,
+            score: r.vas_score,
+            date: new Date(r.created_at).toLocaleDateString('he-IL', { day:'numeric', month:'numeric' })
+          }))
+          const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+          const area = `${path} L ${pts[pts.length-1].x} ${h} L 0 ${h} Z`
+          const first = vasData[0]?.vas_score
+          const last = vasData[vasData.length-1]?.vas_score
+          const trend = last < first ? '📉 ירידה בכאב' : last > first ? '📈 עלייה בכאב' : '➡️ יציב'
+          const trendColor = last < first ? '#065f46' : last > first ? '#991b1b' : '#92400e'
+          return (
+            <div style={{ background:'#fff', borderRadius:'12px', padding:'16px', marginBottom:'14px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px' }}>
+                <div style={{ fontWeight:'700', fontSize:'13px', color:'#1a3a5c' }}>📊 מגמת כאב VAS</div>
+                <span style={{ fontSize:'11px', fontWeight:'700', color: trendColor, background: last < first ? '#d1fae5' : last > first ? '#fee2e2' : '#fef3c7', padding:'3px 10px', borderRadius:'20px' }}>
+                  {trend}
+                </span>
+              </div>
+              <svg viewBox={`0 0 ${w} ${h}`} style={{ width:'100%', height:'80px' }}>
+                <defs>
+                  <linearGradient id="vasGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity="0.02" />
+                  </linearGradient>
+                </defs>
+                <path d={area} fill="url(#vasGrad)" />
+                <path d={path} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                {pts.map((p, i) => (
+                  <g key={i}>
+                    <circle cx={p.x} cy={p.y} r="4" fill="#ef4444" />
+                    <text x={p.x} y={p.y - 8} textAnchor="middle" fontSize="10" fill="#374151" fontWeight="bold">{p.score}</text>
+                  </g>
+                ))}
+              </svg>
+              <div style={{ display:'flex', justifyContent:'space-between', marginTop:'4px' }}>
+                {pts.map((p, i) => <div key={i} style={{ fontSize:'9px', color:'#94a3b8', textAlign:'center', flex:1 }}>{p.date}</div>)}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Tabs */}
         <div style={{ display:'flex', borderBottom:'2px solid #f1f5f9', marginBottom:'16px', overflowX:'auto' }}>
