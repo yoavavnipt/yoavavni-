@@ -1,6 +1,6 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -22,7 +22,11 @@ const SOAP_FIELDS = [
   { key: 'plan',        label: 'P — Plan',         color: '#10b981', placeholder: 'תוכנית טיפול: טכניקות, תרגילים, מעקב...' },
 ]
 
-export default function NewRecordPage() {
+export default function NewRecordPageWrapper() {
+  return <Suspense fallback={<div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>טוען...</div>}><NewRecordPage /></Suspense>
+}
+
+function NewRecordPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedPatient = searchParams.get('patient')

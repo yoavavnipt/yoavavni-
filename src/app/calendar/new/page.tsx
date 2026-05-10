@@ -1,6 +1,6 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase, SERVICES } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -15,7 +15,11 @@ const lbl = {
   color: '#64748b', marginBottom: '4px', textTransform: 'uppercase' as const,
 }
 
-export default function NewAppointmentPage() {
+export default function NewAppointmentPageWrapper() {
+  return <Suspense fallback={<div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>טוען...</div>}><NewAppointmentPage /></Suspense>
+}
+
+function NewAppointmentPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedPatient = searchParams.get('patient')
