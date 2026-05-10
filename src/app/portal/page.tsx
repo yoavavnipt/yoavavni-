@@ -110,7 +110,7 @@ export default function PortalPage() {
         </button>
 
         <div style={{ marginTop: '20px', padding: '12px', background: '#f8fafc', borderRadius: '10px', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
-          לא רשום? <a href={`tel:${CLINIC.phone}`} style={{ color: '#3eb8e5', fontWeight: '700' }}>התקשר אלינו</a>
+          מטופל חדש? <a href="/portal/chat" style={{ color: '#3eb8e5', fontWeight: '700' }}>צור איתנו קשר →</a>
         </div>
       </div>
 
