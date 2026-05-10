@@ -32,6 +32,7 @@ function NewRecordPage() {
   const preselectedPatient = searchParams.get('patient')
 
   const [patients, setPatients] = useState<any[]>([])
+  const [therapists, setTherapists] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [patientSearch, setPatientSearch] = useState('')
   const [selectedPatientName, setSelectedPatientName] = useState('')
@@ -40,10 +41,10 @@ function NewRecordPage() {
     subjective: '', objective: '', assessment: '', plan: '',
     vas_score: null as number | null,
     notes: '',
-    therapist_name: 'יואב אבני',
+    therapist_name: '',
   })
 
-  useEffect(() => { loadPatients() }, [])
+  useEffect(() => { loadPatients(); loadTherapists() }, [])
   useEffect(() => {
     if (preselectedPatient && patients.length > 0) {
       const p = patients.find(p => p.id === preselectedPatient)
@@ -56,10 +57,22 @@ function NewRecordPage() {
     setPatients(data || [])
   }
 
+  async function loadTherapists() {
+    const { data } = await supabase.from('clinic_users').select('id,name,role').eq('active', true).in('role', ['admin','therapist']).order('name')
+    setTherapists(data || [])
+    // Set default from localStorage
+    const saved = localStorage.getItem('clinic_user')
+    if (saved) {
+      const u = JSON.parse(saved)
+      setForm(p => ({ ...p, therapist_name: u.name }))
+    }
+  }
+
   const set = (f: string, v: any) => setForm(p => ({ ...p, [f]: v }))
 
   async function save() {
     if (!form.patient_id) { alert('יש לבחור מטופל'); return }
+    if (!form.therapist_name) { alert('יש לבחור מטפל'); return }
     if (!form.subjective && !form.objective && !form.assessment && !form.plan) { alert('יש למלא לפחות שדה אחד'); return }
     setSaving(true)
     const { error } = await supabase.from('treatment_records').insert([form])
@@ -169,8 +182,13 @@ function NewRecordPage() {
         <div style={{ background: '#fff', borderRadius: '12px', padding: '18px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
             <div>
-              <label style={lbl}>שם המטפל</label>
-              <input style={inp} value={form.therapist_name} onChange={e => set('therapist_name', e.target.value)} />
+              <label style={lbl}>מטפל *</label>
+              <select style={inp} value={form.therapist_name} onChange={e => set('therapist_name', e.target.value)}>
+                <option value="">בחר מטפל...</option>
+                {therapists.map(t => (
+                  <option key={t.id} value={t.name}>{t.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label style={lbl}>הערות נוספות</label>
