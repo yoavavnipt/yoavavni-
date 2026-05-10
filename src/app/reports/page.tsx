@@ -101,7 +101,10 @@ export default function ReportsPage() {
     const noShow = (apptsAll || []).filter(a => a.status === 'no_show').length
     const avgIncome = paid.length > 0 ? Math.round(totalIncome / paid.length) : 0
 
-    setKpis({ totalIncome, totalAppts, cancelled, noShow, avgIncome, paidCount: paid.length, cancellationRate: totalAppts > 0 ? Math.round((cancelled / totalAppts) * 100) : 0 })
+    const uniquePatients = new Set((apptsAll || []).filter(a => a.status !== 'cancelled').map(a => a.patient_id)).size
+    const avgTreatmentsPerPatient = uniquePatients > 0 ? Math.round(((apptsAll || []).filter(a => a.status !== 'cancelled').length / uniquePatients) * 10) / 10 : 0
+
+    setKpis({ totalIncome, totalAppts, cancelled, noShow, avgIncome, paidCount: paid.length, cancellationRate: totalAppts > 0 ? Math.round((cancelled / totalAppts) * 100) : 0, avgTreatmentsPerPatient, uniquePatients })
 
     // Income by month
     setIncomeByMonth(months.map(m => ({
@@ -195,11 +198,12 @@ export default function ReportsPage() {
         ) : (
           <>
             {/* KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: '10px', marginBottom: '16px' }}>
               {[
                 { label: 'הכנסה', value: `₪${kpis.totalIncome?.toLocaleString()}`, icon: '💰', color: '#0b8a5e', sub: `${kpis.paidCount} תשלומים` },
                 { label: 'ממוצע לטיפול', value: `₪${kpis.avgIncome}`, icon: '📊', color: '#3eb8e5', sub: 'ממוצע' },
                 { label: 'תורים', value: kpis.totalAppts, icon: '📅', color: '#7c3aed', sub: `${kpis.cancellationRate}% ביטולים` },
+                { label: 'ממוצע למטופל', value: kpis.avgTreatmentsPerPatient, icon: '🔁', color: '#1e4a7a', sub: `${kpis.uniquePatients} מטופלים שונים` },
                 { label: 'לא הגיעו', value: kpis.noShow, icon: '❌', color: '#dc2626', sub: 'no-show' },
               ].map(k => (
                 <div key={k.label} style={{ background: '#fff', borderRadius: '12px', padding: '14px', borderRight: `3px solid ${k.color}`, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
