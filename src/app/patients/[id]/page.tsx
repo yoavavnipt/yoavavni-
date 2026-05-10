@@ -69,7 +69,7 @@ function buildPaymentMsg(patient: any, lastAppt: any) {
   const name = `${patient.first_name} ${patient.last_name}`
   const service = lastAppt?.service?.name_he || 'טיפול'
   const { price, link } = getPaymentLink(service, patient.city || '')
-  return `שלום ${name},\n\nתזכורת לתשלום עבור ${service}.\nסכום לתשלום: ₪${price}\n\n💳 לתשלום באשראי:\n${link}\n\nאו:\n💵 מזומן בקליניקה\n📱 ביט / פייבוקס: 054-5953889\n\nתודה! 🙏\nקליניקת יואב אבני`
+  return `שלום ${name} 😊\n\nתזכורת לתשלום עבור ${service}.\nסכום: ₪${price}\n\n💳 לתשלום באשראי:\n${link}\n\nתודה! 🙏\nקליניקת יואב אבני`
 }
 
 function openWA(phone: string, msg: string) {
