@@ -14,7 +14,8 @@ const NAV = [
     { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים' },
   ]},
   { section: 'תקשורת', items: [
-    { href: '/whatsapp', icon: '💬', label: 'הודעות WhatsApp' },
+    { href: '/whatsapp',   icon: '💬', label: 'הודעות WhatsApp' },
+    { href: '/templates',  icon: '✏️',  label: 'עריכת תבניות' },
   ]},
   { section: 'ניהול', items: [
     { href: '/reports',   icon: '📈', label: 'דוחות' },
