@@ -1,31 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'Heebo', -apple-system, sans-serif;
-  background: #f0f4f8;
-  direction: rtl;
-  color: #1e293b;
-}
-
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-
-input, textarea, select {
-  font-family: 'Heebo', sans-serif;
-  direction: rtl;
-}
-
-a { text-decoration: none; color: inherit; }
-
-.fade-in {
-  animation: fadeIn 0.2s ease-in-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
 }
