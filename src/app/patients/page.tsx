@@ -32,10 +32,10 @@ export default function PatientsPage() {
         .from('treatment_records')
         .select('patient_id')
         .eq('therapist_name', currentUser.name)
-      const patientIds = [...new Set([
+      const patientIds = Array.from(new Set([
         ...(myAppts || []).map((a: any) => a.patient_id),
         ...(myRecords || []).map((r: any) => r.patient_id),
-      ])]
+      ]))
       if (patientIds.length > 0) {
         q = q.in('id', patientIds)
       } else {
