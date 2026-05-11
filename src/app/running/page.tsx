@@ -117,7 +117,7 @@ export default function RunningPage() {
             תישאר בריא.
           </h1>
           <p style={{ fontSize: '17px', color: 'rgba(255,255,255,0.75)', lineHeight: '1.7', marginBottom: '32px', maxWidth: '560px', margin: '0 auto 32px' }}>
-            תוכנית ריצה מקצועית בליווי פיזיותרפיסט. לא עוד פציעות, לא עוד תקרות זכוכית — תוכנית מותאמת אישית שמביאה תוצאות אמיתיות.
+            תוכנית ריצה מקצועית בהובלת מאמן ריצה — סטודנט לפיזיותרפיה — תחת פיקוחו של יואב אבני PT. לא עוד פציעות, לא עוד תקרות זכוכית — תוכנית מותאמת אישית שמביאה תוצאות אמיתיות.
           </p>
           <a href="#packages" style={{
             display: 'inline-block', padding: '16px 36px',
@@ -137,9 +137,9 @@ export default function RunningPage() {
 
       {/* Why section */}
       <div style={{ padding: '60px 24px', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '12px' }}>למה קבוצת ריצה עם פיזיותרפיסט?</h2>
+        <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '12px' }}>למה קבוצת ריצה תחת קליניקת יואב אבני?</h2>
         <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '40px', lineHeight: '1.7' }}>
-          רוב הרצים מתאמנים בלי מעקב מקצועי — ומגיעים לפציעה. אנחנו משלבים תכנון מדעי, מעקב עומסים, ותיקון טכניקה כדי שתשיג את המטרות שלך בצורה בטוחה.
+          הקבוצה מובלת על ידי מאמן ריצה — סטודנט לפיזיותרפיה — תחת פיקוחו הישיר של יואב אבני PT. השילוב הזה ייחודי: אתה מקבל ליווי ספורטיבי מקצועי עם גיבוי רפואי מלא. רוב הרצים מתאמנים בלי מעקב מקצועי ומגיעים לפציעה — אנחנו כאן כדי לשנות את זה.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '20px' }}>
           {[
@@ -160,7 +160,7 @@ export default function RunningPage() {
       <div id="packages" style={{ padding: '20px 24px 60px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '8px' }}>בחר את החבילה המתאימה לך</h2>
-          <p style={{ fontSize: '14px', color: '#94a3b8' }}>כל החבילות כוללות ליווי אישי מיואב אבני PT</p>
+          <p style={{ fontSize: '14px', color: '#94a3b8' }}>כל החבילות בהובלת מאמן ריצה תחת פיקוח יואב אבני PT</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', marginBottom: '48px' }}>
