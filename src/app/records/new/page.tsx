@@ -81,6 +81,58 @@ function NewRecordPage() {
     router.push(form.patient_id ? `/patients/${form.patient_id}` : '/records')
   }
 
+  const [aiInput, setAiInput] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+
+  async function generateSOAP() {
+    if (!aiInput.trim()) return
+    setAiLoading(true)
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `אתה פיזיותרפיסט מנוסה. על בסיס המידע הבא, כתוב רשומת SOAP מקצועית בעברית.
+            
+מידע מהטיפול:
+${aiInput}
+
+כתוב בדיוק בפורמט הבא (JSON בלבד, ללא טקסט נוסף):
+{
+  "subjective": "...",
+  "objective": "...",
+  "assessment": "...",
+  "plan": "..."
+}
+
+דגשים:
+- S: תלונות המטופל בגוף ראשון עקיף
+- O: ממצאי בדיקה אובייקטיביים (ROM, כוח, פלפציה)
+- A: הערכת המטפל והמגמה
+- P: תוכנית טיפול ספציפית
+- כתוב בעברית מקצועית קלינית
+- השתמש בנתונים שניתנו, אל תמציא`
+          }]
+        })
+      })
+      const data = await response.json()
+      const text = data.content?.[0]?.text || ''
+      const clean = text.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      set('subjective', parsed.subjective || '')
+      set('objective', parsed.objective || '')
+      set('assessment', parsed.assessment || '')
+      set('plan', parsed.plan || '')
+    } catch (e) {
+      alert('שגיאה ביצירת SOAP. נסה שוב.')
+    }
+    setAiLoading(false)
+  }
+
   const filteredPatients = patients.filter(p =>
     `${p.first_name} ${p.last_name}`.toLowerCase().includes(patientSearch.toLowerCase())
   )
@@ -158,6 +210,47 @@ function NewRecordPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8' }}>
             <span>0 — ללא כאב</span><span>10 — כאב קיצוני</span>
           </div>
+        </div>
+
+        {/* AI SOAP */}
+        <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #2d5986)', borderRadius: '12px', padding: '18px', marginBottom: '14px', boxShadow: '0 2px 8px rgba(26,58,92,0.3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <div style={{ fontSize: '20px' }}>🤖</div>
+            <div>
+              <div style={{ fontWeight: '800', fontSize: '14px', color: '#fff' }}>AI SOAP — כתיבה אוטומטית</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '1px' }}>תאר את הטיפול בקצרה ו-AI יכתוב את ה-SOAP</div>
+            </div>
+          </div>
+          <textarea
+            value={aiInput}
+            onChange={e => setAiInput(e.target.value)}
+            placeholder="לדוגמה: גב תחתון, כאב 6, קושי בישיבה, ROM כיפוף 60 מעלות, כאב L4-L5, שיפור קל מהטיפול הקודם, המשך ידני וליבה..."
+            style={{
+              width: '100%', padding: '12px', border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '8px', fontSize: '13px', outline: 'none',
+              fontFamily: 'Heebo, sans-serif', background: 'rgba(255,255,255,0.1)',
+              color: '#fff', minHeight: '80px', resize: 'vertical',
+              marginBottom: '10px',
+            }}
+          />
+          <button
+            onClick={generateSOAP}
+            disabled={aiLoading || !aiInput.trim()}
+            style={{
+              width: '100%', padding: '11px', border: 'none', borderRadius: '8px',
+              background: aiLoading || !aiInput.trim() ? 'rgba(255,255,255,0.2)' : '#3eb8e5',
+              color: '#fff', fontSize: '14px', fontWeight: '800',
+              cursor: aiLoading || !aiInput.trim() ? 'not-allowed' : 'pointer',
+              fontFamily: 'Heebo, sans-serif',
+            }}
+          >
+            {aiLoading ? '⏳ כותב SOAP...' : '✨ צור SOAP אוטומטית'}
+          </button>
+          {aiLoading && (
+            <div style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
+              AI כותב את הרשומה הקלינית שלך...
+            </div>
+          )}
         </div>
 
         {/* SOAP Fields */}
