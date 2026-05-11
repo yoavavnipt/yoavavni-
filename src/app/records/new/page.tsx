@@ -3,6 +3,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { SOAP_TEMPLATES, DIAGNOSES, STAGES } from '@/lib/soap-templates'
 
 const inp = {
   width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0',
@@ -81,57 +82,9 @@ function NewRecordPage() {
     router.push(form.patient_id ? `/patients/${form.patient_id}` : '/records')
   }
 
-  const [aiInput, setAiInput] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
-
-  async function generateSOAP() {
-    if (!aiInput.trim()) return
-    setAiLoading(true)
-    try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `אתה פיזיותרפיסט מנוסה. על בסיס המידע הבא, כתוב רשומת SOAP מקצועית בעברית.
-            
-מידע מהטיפול:
-${aiInput}
-
-כתוב בדיוק בפורמט הבא (JSON בלבד, ללא טקסט נוסף):
-{
-  "subjective": "...",
-  "objective": "...",
-  "assessment": "...",
-  "plan": "..."
-}
-
-דגשים:
-- S: תלונות המטופל בגוף ראשון עקיף
-- O: ממצאי בדיקה אובייקטיביים (ROM, כוח, פלפציה)
-- A: הערכת המטפל והמגמה
-- P: תוכנית טיפול ספציפית
-- כתוב בעברית מקצועית קלינית
-- השתמש בנתונים שניתנו, אל תמציא`
-          }]
-        })
-      })
-      const data = await response.json()
-      const text = data.content?.[0]?.text || ''
-      const clean = text.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
-      set('subjective', parsed.subjective || '')
-      set('objective', parsed.objective || '')
-      set('assessment', parsed.assessment || '')
-      set('plan', parsed.plan || '')
-    } catch (e) {
-      alert('שגיאה ביצירת SOAP. נסה שוב.')
-    }
-    setAiLoading(false)
-  }
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState('')
+  const [selectedStage, setSelectedStage] = useState('')
+  const [showTemplates, setShowTemplates] = useState(true)
 
   const filteredPatients = patients.filter(p =>
     `${p.first_name} ${p.last_name}`.toLowerCase().includes(patientSearch.toLowerCase())
@@ -212,46 +165,89 @@ ${aiInput}
           </div>
         </div>
 
-        {/* AI SOAP */}
-        <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #2d5986)', borderRadius: '12px', padding: '18px', marginBottom: '14px', boxShadow: '0 2px 8px rgba(26,58,92,0.3)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '20px' }}>🤖</div>
-            <div>
-              <div style={{ fontWeight: '800', fontSize: '14px', color: '#fff' }}>AI SOAP — כתיבה אוטומטית</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '1px' }}>תאר את הטיפול בקצרה ו-AI יכתוב את ה-SOAP</div>
+        {/* Smart Templates */}
+        {showTemplates && (
+          <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #2d5986)', borderRadius: '12px', padding: '18px', marginBottom: '14px', boxShadow: '0 2px 8px rgba(26,58,92,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <div style={{ fontWeight: '800', fontSize: '14px', color: '#fff' }}>⚡ תבנית SOAP מהירה</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '1px' }}>בחר אבחנה ושלב — SOAP ימולא אוטומטית</div>
+              </div>
+              <button onClick={() => setShowTemplates(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                הסתר
+              </button>
             </div>
+
+            {/* Diagnosis */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', textTransform: 'uppercase' }}>אבחנה</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' }}>
+                {DIAGNOSES.map(d => (
+                  <button key={d.id} onClick={() => { setSelectedDiagnosis(d.id); setSelectedStage('') }} style={{
+                    padding: '8px 6px', borderRadius: '8px', border: `2px solid ${selectedDiagnosis === d.id ? '#3eb8e5' : 'rgba(255,255,255,0.2)'}`,
+                    background: selectedDiagnosis === d.id ? '#3eb8e5' : 'rgba(255,255,255,0.08)',
+                    color: '#fff', cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+                    fontSize: '11px', fontWeight: selectedDiagnosis === d.id ? '700' : '400',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '16px', marginBottom: '2px' }}>{d.icon}</div>
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stage */}
+            {selectedDiagnosis && (
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', textTransform: 'uppercase' }}>שלב</div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {STAGES.filter(s => SOAP_TEMPLATES.some(t => t.diagnosis === selectedDiagnosis && t.stage === s.id)).map(s => (
+                    <button key={s.id} onClick={() => setSelectedStage(s.id)} style={{
+                      padding: '7px 12px', borderRadius: '8px', border: `2px solid ${selectedStage === s.id ? '#3eb8e5' : 'rgba(255,255,255,0.2)'}`,
+                      background: selectedStage === s.id ? '#3eb8e5' : 'rgba(255,255,255,0.08)',
+                      color: '#fff', cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+                      fontSize: '12px', fontWeight: selectedStage === s.id ? '700' : '400',
+                    }}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Apply template */}
+            {selectedDiagnosis && selectedStage && (() => {
+              const tmpl = SOAP_TEMPLATES.find(t => t.diagnosis === selectedDiagnosis && t.stage === selectedStage)
+              if (!tmpl) return null
+              return (
+                <button onClick={() => {
+                  set('subjective', tmpl.subjective)
+                  set('objective', tmpl.objective)
+                  set('assessment', tmpl.assessment)
+                  set('plan', tmpl.plan)
+                  setShowTemplates(false)
+                }} style={{
+                  width: '100%', padding: '12px', background: '#3eb8e5',
+                  color: '#fff', border: 'none', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+                }}>
+                  ⚡ מלא SOAP אוטומטית
+                </button>
+              )
+            })()}
           </div>
-          <textarea
-            value={aiInput}
-            onChange={e => setAiInput(e.target.value)}
-            placeholder="לדוגמה: גב תחתון, כאב 6, קושי בישיבה, ROM כיפוף 60 מעלות, כאב L4-L5, שיפור קל מהטיפול הקודם, המשך ידני וליבה..."
-            style={{
-              width: '100%', padding: '12px', border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '8px', fontSize: '13px', outline: 'none',
-              fontFamily: 'Heebo, sans-serif', background: 'rgba(255,255,255,0.1)',
-              color: '#fff', minHeight: '80px', resize: 'vertical',
-              marginBottom: '10px',
-            }}
-          />
-          <button
-            onClick={generateSOAP}
-            disabled={aiLoading || !aiInput.trim()}
-            style={{
-              width: '100%', padding: '11px', border: 'none', borderRadius: '8px',
-              background: aiLoading || !aiInput.trim() ? 'rgba(255,255,255,0.2)' : '#3eb8e5',
-              color: '#fff', fontSize: '14px', fontWeight: '800',
-              cursor: aiLoading || !aiInput.trim() ? 'not-allowed' : 'pointer',
-              fontFamily: 'Heebo, sans-serif',
-            }}
-          >
-            {aiLoading ? '⏳ כותב SOAP...' : '✨ צור SOAP אוטומטית'}
+        )}
+
+        {!showTemplates && (
+          <button onClick={() => setShowTemplates(true)} style={{
+            width: '100%', padding: '10px', marginBottom: '14px',
+            border: '2px dashed #e2e8f0', borderRadius: '10px', background: '#fff',
+            color: '#64748b', fontSize: '13px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+          }}>
+            ⚡ בחר תבנית SOAP מהירה
           </button>
-          {aiLoading && (
-            <div style={{ textAlign: 'center', fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>
-              AI כותב את הרשומה הקלינית שלך...
-            </div>
-          )}
-        </div>
+        )}
 
         {/* SOAP Fields */}
         {SOAP_FIELDS.map(f => (
