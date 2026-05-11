@@ -13,12 +13,31 @@ export default function CalendarPage() {
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
+    const savedUser = localStorage.getItem('clinic_user')
+    const currentUser = savedUser ? JSON.parse(savedUser) : null
+
+    let q = supabase
       .from('appointments')
       .select(`*, patient:patients(first_name,last_name,phone), service:service_types(name_he,icon,color)`)
       .eq('date', selectedDate)
       .order('time')
-    setAppointments(data || [])
+
+    // Therapist sees only appointments where they are the therapist
+    // We use treatment_records to find their patients for that day
+    const { data } = await q
+    let appts = data || []
+
+    if (currentUser?.role === 'therapist') {
+      // Get patient IDs this therapist has records for
+      const { data: myRecords } = await supabase
+        .from('treatment_records')
+        .select('patient_id')
+        .eq('therapist_name', currentUser.name)
+      const myPatientIds = new Set((myRecords || []).map((r: any) => r.patient_id))
+      appts = appts.filter(a => myPatientIds.has(a.patient_id))
+    }
+
+    setAppointments(appts)
     setLoading(false)
   }
 
