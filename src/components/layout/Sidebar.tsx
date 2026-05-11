@@ -18,9 +18,10 @@ const NAV = [
     { href: '/templates',  icon: '✏️',  label: 'עריכת תבניות' },
   ]},
   { section: 'ניהול', items: [
-    { href: '/reports',   icon: '📈', label: 'דוחות' },
-    { href: '/admin',     icon: '👤', label: 'משתמשים' },
-    { href: '/settings',  icon: '⚙️',  label: 'הגדרות' },
+    { href: '/reports',     icon: '📈', label: 'דוחות' },
+    { href: '/predictive',  icon: '🎯', label: 'סיכון נשירה' },
+    { href: '/admin',       icon: '👤', label: 'משתמשים' },
+    { href: '/settings',    icon: '⚙️',  label: 'הגדרות' },
   ]},
 ]
 
