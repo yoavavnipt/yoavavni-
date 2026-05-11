@@ -133,7 +133,7 @@ export default function PredictivePage() {
     const phone = patient.phone?.replace(/^0/, '').replace(/-/g, '')
     const msg = buildWAMessage(patient.first_name)
     window.open(`https://wa.me/972${phone}?text=${encodeURIComponent(msg)}`, '_blank')
-    setSentTo(p => new Set([...p, patient.id]))
+    setSentTo(p => new Set(Array.from(p).concat(patient.id)))
   }
 
   const filtered = patients.filter(p => {
