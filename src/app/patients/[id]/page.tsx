@@ -250,6 +250,13 @@ export default function PatientProfilePage() {
                   <Link href={`/whatsapp?patient=${id}`} style={{ padding:'8px 12px', background:'#25d366', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700' }}>
                     💬 כל ההודעות
                   </Link>
+                  <button onClick={() => {
+                    const phone = patient.phone?.replace(/^0/,'').replace(/-/g,'')
+                    const msg = encodeURIComponent(`שלום ${patient.first_name} ${patient.last_name} 😊\n\nיצרנו עבורך גישה אישית לפורטל הקליניקה!\n\n🔗 לכניסה:\nhttps://yoavavni-9dy3.vercel.app/portal\n\nהיכנס עם מספר הטלפון שלך: ${patient.phone}\n\nבפורטל תוכל:\n📅 לקבוע תורים בעצמך\n📋 לראות את התורים הקרובים שלך\n\nקליניקת יואב אבני`)
+                    window.open(`https://wa.me/972${phone}?text=${msg}`, '_blank')
+                  }} style={{ padding:'8px 12px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                    🔗 הזמן לפורטל
+                  </button>
                 </>
               )
             })()}
