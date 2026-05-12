@@ -3,6 +3,63 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useEffect, useState } from 'react'
 import { supabase, APPOINTMENT_STATUS } from '@/lib/supabase'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+function GlobalSearch() {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<any[]>([])
+  const [open, setOpen] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!query || query.length < 2) { setResults([]); return }
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase
+        .from('patients')
+        .select('id,first_name,last_name,phone,diagnosis')
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,phone.ilike.%${query}%`)
+        .limit(6)
+      setResults(data || [])
+      setOpen(true)
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [query])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        placeholder="🔍 חפש מטופל..."
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 200)}
+        style={{
+          padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: '8px',
+          fontSize: '13px', outline: 'none', background: '#fff', width: '220px',
+          fontFamily: 'Heebo, sans-serif',
+        }}
+      />
+      {open && results.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff',
+          borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          border: '1px solid #e2e8f0', zIndex: 100, marginTop: '4px',
+        }}>
+          {results.map(p => (
+            <div key={p.id} onClick={() => { router.push(`/patients/${p.id}`); setQuery(''); setOpen(false) }}
+              style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f8fafc', fontSize: '13px' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+            >
+              <div style={{ fontWeight: '600' }}>{p.first_name} {p.last_name}</div>
+              <div style={{ fontSize: '11px', color: '#94a3b8' }}>{p.phone} {p.diagnosis ? `· ${p.diagnosis}` : ''}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({ patients: 0, todayAppts: 0, monthIncome: 0, pending: 0 })
@@ -63,10 +120,15 @@ export default function DashboardPage() {
       <div style={{ padding: '20px 24px' }} className="fade-in">
         {/* Header */}
         <div style={{ marginBottom: '20px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>לוח בקרה</h1>
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-            {new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>לוח בקרה</h1>
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                {new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+            <GlobalSearch />
+          </div>
         </div>
 
         {/* KPIs */}

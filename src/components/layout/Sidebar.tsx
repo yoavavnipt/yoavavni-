@@ -41,6 +41,7 @@ export default function Sidebar() {
 
   function logout() {
     localStorage.removeItem('clinic_user')
+    document.cookie = 'clinic_user=; path=/; max-age=0'
     window.location.href = '/login'
   }
 

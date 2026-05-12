@@ -33,6 +33,8 @@ export default function LoginPage() {
     }
 
     localStorage.setItem('clinic_user', JSON.stringify(user))
+    // Set cookie for middleware
+    document.cookie = `clinic_user=${encodeURIComponent(JSON.stringify({ id: user.id, role: user.role, name: user.name }))}; path=/; max-age=86400`
     router.push('/dashboard')
   }
 
