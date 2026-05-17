@@ -28,6 +28,8 @@ export const SERVICES = [
   { id: 'ortho',         name_he: 'מדרסים',                     icon: '🦿', color: '#854d0e', price: 1500, duration: 60 },
 ]
 
+export const PAYMENT_METHODS = ['מזומן', 'טרנזילה', 'העברה בנקאית', 'ביט', 'פייבוקס']
+
 export const HMO_OPTIONS = [
   'כללית מושלם', 'כללית פלטינום', 'כללית', 
   'מכבי שלי', 'מכבי', 'מאוחדת', 'לאומית', 

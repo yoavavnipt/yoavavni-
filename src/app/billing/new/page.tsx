@@ -117,7 +117,7 @@ function NewBillingPage() {
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>אמצעי תשלום</label>
               <select style={inp} value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
-                {['מזומן', 'אשראי', 'העברה בנקאית', 'ביט', 'פייבוקס', 'Tranzila'].map(m => <option key={m}>{m}</option>)}
+                {['מזומן', 'טרנזילה', 'העברה בנקאית', 'ביט', 'פייבוקס'].map(m => <option key={m}>{m}</option>)}
               </select>
             </div>
             <div style={{ gridColumn: '1/-1' }}>

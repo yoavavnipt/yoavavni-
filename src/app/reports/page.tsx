@@ -104,7 +104,14 @@ export default function ReportsPage() {
     const uniquePatients = new Set((apptsAll || []).filter(a => a.status !== 'cancelled').map(a => a.patient_id)).size
     const avgTreatmentsPerPatient = uniquePatients > 0 ? Math.round(((apptsAll || []).filter(a => a.status !== 'cancelled').length / uniquePatients) * 10) / 10 : 0
 
-    setKpis({ totalIncome, totalAppts, cancelled, noShow, avgIncome, paidCount: paid.length, cancellationRate: totalAppts > 0 ? Math.round((cancelled / totalAppts) * 100) : 0, avgTreatmentsPerPatient, uniquePatients })
+    // Payment method breakdown
+    const paymentBreakdown: Record<string, number> = {}
+    paid.forEach(b => {
+      const method = b.payment_method || 'לא צוין'
+      paymentBreakdown[method] = (paymentBreakdown[method] || 0) + (b.amount || 0)
+    })
+
+    setKpis({ totalIncome, totalAppts, cancelled, noShow, avgIncome, paidCount: paid.length, cancellationRate: totalAppts > 0 ? Math.round((cancelled / totalAppts) * 100) : 0, avgTreatmentsPerPatient, uniquePatients, paymentBreakdown })
 
     // Income by month
     setIncomeByMonth(months.map(m => ({
@@ -214,6 +221,27 @@ export default function ReportsPage() {
                 </div>
               ))}
             </div>
+
+            {/* Payment method breakdown */}
+            {kpis.paymentBreakdown && Object.keys(kpis.paymentBreakdown).length > 0 && (
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '18px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontWeight: '700', fontSize: '13px', color: '#1a3a5c', marginBottom: '14px' }}>💳 פילוח לפי אמצעי תשלום</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px,1fr))', gap: '10px' }}>
+                  {Object.entries(kpis.paymentBreakdown).sort((a, b) => b[1] - a[1]).map(([method, amount]) => {
+                    const colors: Record<string,string> = { 'מזומן': '#0b8a5e', 'טרנזילה': '#1e4a7a', 'ביט': '#7c3aed', 'פייבוקס': '#0891b2', 'העברה בנקאית': '#92400e' }
+                    const color = colors[method] || '#64748b'
+                    const pct = Math.round(((amount as number) / kpis.totalIncome) * 100)
+                    return (
+                      <div key={method} style={{ padding: '12px', background: '#f8fafc', borderRadius: '10px', borderRight: `3px solid ${color}` }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color, marginBottom: '4px' }}>{method}</div>
+                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a5c' }}>₪{(amount as number).toLocaleString()}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{pct}%</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Charts row 1 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
