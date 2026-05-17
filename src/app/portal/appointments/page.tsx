@@ -134,9 +134,10 @@ export default function PortalAppointmentsPage() {
                           {cancelling === a.id ? '⏳ מבטל...' : '❌ בטל תור'}
                         </button>
                       ) : (
-                        <div style={{ padding: '8px 12px', background: '#fef3c7', borderRadius: '8px', fontSize: '11px', color: '#92400e', textAlign: 'center' }}>
-                          ⚠️ לביטול פחות מ-24 שעות לפני — התקשר: <a href={`tel:${CLINIC.phone}`} style={{ color: '#92400e', fontWeight: '700' }}>{CLINIC.phone}</a>
-                        </div>
+                        <a href={`https://wa.me/972${CLINIC.phone.replace(/^0/,'').replace(/-/g,'')}?text=${encodeURIComponent(`שלום, אני ${patient?.first_name} ${patient?.last_name}.\nאני מעוניין לבטל את התור שלי לתאריך ${new Date(a.date).toLocaleDateString('he-IL')} בשעה ${a.time?.slice(0,5)}.\nאני מבין שביטול מאוחר כרוך בחיוב מלא.`)}`} target="_blank" rel="noreferrer"
+                          style={{ display: 'block', padding: '9px', background: '#fef3c7', borderRadius: '8px', fontSize: '12px', fontWeight: '700', textAlign: 'center', color: '#92400e', textDecoration: 'none' }}>
+                          ⚠️ בקשת ביטול מאוחר — שלח הודעה לקליניקה
+                        </a>
                       )}
                     </div>
                   )}
