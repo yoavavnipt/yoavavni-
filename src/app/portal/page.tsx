@@ -118,7 +118,7 @@ export default function PortalPage() {
       <div style={{ marginTop: '32px', width: '100%', maxWidth: '400px' }}>
         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>השירותים שלנו</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
-          {SERVICES.slice(0,8).map(s => (
+          {SERVICES.filter(s => s.price > 0 && !s.id.includes('run') && !s.id.includes('physio_local') && !s.id.includes('rehab') && !s.id.includes('ortho')).map(s => (
             <div key={s.id} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 6px', textAlign: 'center' }}>
               <div style={{ fontSize: '20px', marginBottom: '4px' }}>{s.icon}</div>
               <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontWeight: '600', lineHeight: '1.3' }}>{s.name_he}</div>
