@@ -73,7 +73,7 @@ export default function PortalPage() {
           <span style={{ color: '#3eb8e5' }}>YOAV</span>AVNI
         </div>
         <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-          פורטל מטופלים
+          פורטל  מטופלים 
         </div>
       </div>
 
