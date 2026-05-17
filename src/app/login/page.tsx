@@ -86,6 +86,9 @@ export default function LoginPage() {
           }}>
             {loading ? '⏳ מתחבר...' : 'כניסה למערכת'}
           </button>
+          <div style={{ textAlign: 'center', marginTop: '10px' }}>
+            <a href="/reset-password" style={{ fontSize: '12px', color: '#94a3b8', textDecoration: 'none' }}>שכחתי סיסמה</a>
+          </div>
         </div>
 
         <div style={{ marginTop: '24px', padding: '14px', background: '#f8fafc', borderRadius: '10px', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
