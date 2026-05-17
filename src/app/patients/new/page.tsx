@@ -39,6 +39,12 @@ export default function NewPatientPage() {
       alert('שם פרטי, שם משפחה וטלפון הם שדות חובה')
       return
     }
+    if (!form.email) {
+      alert('אימייל הוא שדה חובה')
+      return
+    }
+      return
+    }
     setSaving(true)
     const { data, error } = await supabase.from('patients').insert([{
       ...form,
@@ -87,7 +93,7 @@ export default function NewPatientPage() {
             <div><label style={lbl}>מספר ת.ז.</label><input style={{ ...inp, direction: 'ltr' }} value={form.id_number} onChange={e => set('id_number', e.target.value)} placeholder="0000000000" /></div>
             <div><label style={lbl}>תאריך לידה</label><input type="date" style={inp} value={form.date_of_birth} onChange={e => set('date_of_birth', e.target.value)} /></div>
             <div><label style={lbl}>טלפון *</label><input style={{ ...inp, direction: 'ltr' }} value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="050-0000000" /></div>
-            <div><label style={lbl}>אימייל</label><input type="email" style={{ ...inp, direction: 'ltr' }} value={form.email} onChange={e => set('email', e.target.value)} placeholder="name@email.com" /></div>
+            <div><label style={lbl}>אימייל *</label><input type="email" style={{ ...inp, direction: 'ltr' }} value={form.email} onChange={e => set('email', e.target.value)} placeholder="name@email.com" /></div>
             <div><label style={lbl}>כתובת</label><input style={inp} value={form.address} onChange={e => set('address', e.target.value)} /></div>
             <div><label style={lbl}>עיר</label><input style={inp} value={form.city} onChange={e => set('city', e.target.value)} /></div>
           </div>
