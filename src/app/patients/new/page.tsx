@@ -43,8 +43,6 @@ export default function NewPatientPage() {
       alert('אימייל הוא שדה חובה')
       return
     }
-      return
-    }
     setSaving(true)
     const { data, error } = await supabase.from('patients').insert([{
       ...form,
