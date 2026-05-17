@@ -228,7 +228,7 @@ export default function ReportsPage() {
                 <div style={{ fontWeight: '700', fontSize: '13px', color: '#1a3a5c', marginBottom: '14px' }}>💳 פילוח לפי אמצעי תשלום</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px,1fr))', gap: '10px' }}>
                   {(Object.entries(kpis.paymentBreakdown) as [string, number][]).sort((a, b) => b[1] - a[1]).map(([method, amount]) => {
-                    const colors: Record<string,string> = { 'מזומן': '#0b8a5e', 'טרנזילה': '#1e4a7a', 'ביט': '#7c3aed', 'פייבוקס': '#0891b2', 'העברה בנקאית': '#92400e' }
+                    const colors: Record<string,string> = { 'מזומן': '#0b8a5e', 'כרטיס אשראי': '#1e4a7a', 'ביט': '#7c3aed', 'פייבוקס': '#0891b2', 'העברה בנקאית': '#92400e' }
                     const color = colors[method] || '#64748b'
                     const pct = Math.round(((amount as number) / kpis.totalIncome) * 100)
                     return (
