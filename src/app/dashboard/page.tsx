@@ -122,7 +122,7 @@ export default function DashboardPage() {
         <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>לוח בקרה</h1>
+              <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>ראשי</h1>
               <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
                 {new Date().toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>

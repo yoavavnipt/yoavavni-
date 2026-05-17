@@ -18,7 +18,7 @@ export default function Sidebar() {
 
   const NAV = [
     { section: 'ראשי', items: [
-      { href: '/dashboard', icon: '📊', label: 'לוח בקרה', show: true },
+      { href: '/dashboard', icon: '📊', label: 'ראשי', show: true },
       { href: '/patients',  icon: '👥', label: 'מטופלים',   show: true },
       { href: '/calendar',  icon: '📅', label: 'יומן תורים', show: true },
     ]},
