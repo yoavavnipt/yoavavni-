@@ -3,7 +3,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useEffect, useState } from 'react'
 import { supabase, CLINIC } from '@/lib/supabase'
 
-const TIMES = ['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00']
+const TIMES = ['06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','13:00','13:45','14:30','15:15','16:00','16:45','17:30','18:15','19:00','19:45','20:30','21:15','22:00','22:45']
 const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי']
 
 function getWeekDates(offset = 0) {
@@ -25,7 +25,7 @@ export default function SlotsPage() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [showBulk, setShowBulk] = useState(false)
-  const [bulk, setBulk] = useState({ startTime: '09:00', endTime: '17:00', interval: '45', days: [0,1,2,3,4], duration: '45' })
+  const [bulk, setBulk] = useState({ startTime: '06:15', endTime: '23:00', interval: '45', days: [0,1,2,3,4], duration: '45' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
