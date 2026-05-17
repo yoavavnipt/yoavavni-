@@ -73,7 +73,7 @@ export default function PortalPage() {
           <span style={{ color: '#3eb8e5' }}>YOAV</span>AVNI
         </div>
         <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginTop: '4px' }}>
-          פורטל  מטופלים 
+          פורטל מטופלים
         </div>
       </div>
 
@@ -114,15 +114,17 @@ export default function PortalPage() {
         </div>
       </div>
 
-      {/* Services preview */}
+      {/* Motivational section */}
       <div style={{ marginTop: '32px', width: '100%', maxWidth: '400px' }}>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>השירותים שלנו</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
-          {SERVICES.filter(s => s.price > 0 && !s.id.includes('run') && !s.id.includes('physio_local') && !s.id.includes('rehab') && !s.id.includes('ortho')).map(s => (
-            <div key={s.id} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 6px', textAlign: 'center' }}>
-              <div style={{ fontSize: '20px', marginBottom: '4px' }}>{s.icon}</div>
-              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontWeight: '600', lineHeight: '1.3' }}>{s.name_he}</div>
-              <div style={{ fontSize: '10px', color: '#3eb8e5', fontWeight: '800', marginTop: '3px' }}>₪{s.price}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {[
+            { icon: '✅', text: 'קביעת תור עצמאית — 24/7, בלי להמתין בטלפון' },
+            { icon: '🏃', text: 'חזרה לפעילות מהירה — טיפול מקצועי ומותאם אישית' },
+            { icon: '💪', text: 'מטפל שמלווה אותך — מהטיפול הראשון ועד ההחלמה המלאה' },
+          ].map((item, i) => (
+            <div key={i} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '22px', flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '500', lineHeight: '1.5' }}>{item.text}</span>
             </div>
           ))}
         </div>
