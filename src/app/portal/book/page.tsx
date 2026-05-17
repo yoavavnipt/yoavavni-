@@ -42,7 +42,7 @@ export default function BookPage() {
       .order('date').order('time')
 
     setAvailableSlots(data || [])
-    const dates = [...new Set((data || []).map((s: any) => s.date))]
+    const dates = Array.from(new Set((data || []).map((s: any) => s.date)))
     setSlotDates(dates)
     if (dates.length > 0) setSelectedDate(dates[0])
     setLoadingSlots(false)
