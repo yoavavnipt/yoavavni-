@@ -26,6 +26,7 @@ export default function Sidebar() {
       { href: '/records',   icon: '📋', label: 'רשומות SOAP', show: true },
       { href: '/slots',     icon: '🕐', label: 'שעות פתוחות', show: true },
       { href: '/billing',   icon: '💰', label: 'חיוב וקבלות', show: isAdmin || isSecretary },
+      { href: '/expenses',  icon: '💸', label: 'הוצאות',      show: isAdmin },
       { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים', show: true },
     ]},
     { section: 'תקשורת', items: [
