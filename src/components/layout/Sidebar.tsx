@@ -34,8 +34,9 @@ export default function Sidebar() {
       { href: '/templates', icon: '✏️',  label: 'עריכת תבניות',   show: isAdmin },
     ]},
     { section: 'ניהול', items: [
-      { href: '/reports',    icon: '📈', label: 'דוחות',         show: isAdmin },
-      { href: '/predictive', icon: '🎯', label: 'סיכון נשירה',   show: isAdmin },
+      { href: '/reports',      icon: '📈', label: 'דוחות',         show: isAdmin },
+      { href: '/reports-pdf',  icon: '📄', label: 'דוחות PDF',     show: isAdmin },
+      { href: '/predictive',   icon: '🎯', label: 'סיכון נשירה',   show: isAdmin },
       { href: '/admin',      icon: '👤', label: 'משתמשים',       show: isAdmin },
       { href: '/settings',   icon: '⚙️',  label: 'הגדרות',        show: isAdmin },
     ]},
