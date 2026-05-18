@@ -2,7 +2,6 @@
 import AppLayout from '@/components/layout/AppLayout'
 import { useState } from 'react'
 import { supabase, CLINIC } from '@/lib/supabase'
-import { LOGO_B64 } from '@/lib/logo-b64'
 
 const MONTH_NAMES_HE: Record<string, string> = {
   '01': 'ינואר', '02': 'פברואר', '03': 'מרץ', '04': 'אפריל',
@@ -108,7 +107,7 @@ export default function ReportsPDFPage() {
   }
 
   function buildReportHTML({ reportType, period, today, incomeData, expensesData }: any) {
-    const logo = `<img src="data:image/png;base64,${LOGO_B64}" style="height:65px;object-fit:contain;">`
+    const logo = `<img src="https://yoavavni-9dy3.vercel.app/logo-transparent.png" style="height:65px;object-fit:contain;">`
     const businessId = CLINIC.businessNum
     const businessName = 'יואב אבני'
 
