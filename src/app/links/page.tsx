@@ -37,7 +37,7 @@ export default function LinksPage() {
           }
           .container { width: 100%; max-width: 420px; }
           .logo-wrap { text-align: center; margin-bottom: 32px; }
-          .logo-wrap img { height: 90px; object-fit: contain; filter: brightness(0) invert(1); }
+          .logo-wrap img { height: 90px; object-fit: contain; }
           .tagline { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 8px; }
           .card {
             background: rgba(255,255,255,0.06);
