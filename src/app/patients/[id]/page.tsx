@@ -55,7 +55,6 @@ function buildContractMsg(patient: any, nextAppt: any) {
   if (service.includes('קבוצתי')) {
     return `בוקר טוב ${name} 😊\n\nקבענו טיפול שיקום קבוצתי בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ למתאמן.\n\nנא להגיע עם בגדים נוחים.\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${FOOTER}`
   }
-  // Default physio
   return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה אורך 45-50 דקות.\nעלות ${price} ₪ לטיפול${local ? ' לתושבי גילון וצורית' : ''}.\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.\nנא להגיע עם בגדים נוחים.${FOOTER}`
 }
 
@@ -101,6 +100,14 @@ function getPaymentLink(serviceName: string, city: string): { price: number; lin
   return PAYMENT_LINKS['physio']
 }
 
+function getFundingLabel(patient: any) {
+  if (!patient.funding_type || patient.funding_type === 'self') return null
+  if (patient.funding_type === 'hmo') return patient.hmo || 'קופת חולים'
+  if (patient.funding_type === 'insurance') return patient.insurance ? `ביטוח: ${patient.insurance}` : 'ביטוח פרטי'
+  if (patient.funding_type === 'group') return patient.funding_group_name ? `קבוצה: ${patient.funding_group_name}` : 'קבוצה'
+  return null
+}
+
 export default function PatientProfilePage() {
   const { id } = useParams()
   const router = useRouter()
@@ -136,7 +143,6 @@ export default function PatientProfilePage() {
     setAppointments(a || []); setRecords(r || []); setBilling(b || [])
     setGoals(g || [])
     if (p?.intake_data) { try { setIntake(JSON.parse(p.intake_data)) } catch {} }
-    // Load goal updates
     if (g && g.length > 0) {
       const { data: updates } = await supabase.from('goal_updates').select('*').in('goal_id', g.map((x:any)=>x.id)).order('date')
       const map: Record<string,any[]> = {}
@@ -204,6 +210,8 @@ export default function PatientProfilePage() {
     { key: 'billing',      label: `חיוב (${billing.length})` },
   ]
 
+  const fundingLabel = getFundingLabel(patient)
+
   return (
     <AppLayout>
       <div style={{ padding:'20px 24px' }} className="fade-in">
@@ -218,7 +226,7 @@ export default function PatientProfilePage() {
               <h1 style={{ fontSize:'22px', fontWeight:'800', color:'#1a3a5c' }}>{patient.first_name} {patient.last_name}</h1>
               <div style={{ display:'flex', gap:'10px', marginTop:'3px', fontSize:'12px', color:'#64748b', flexWrap:'wrap' }}>
                 {patient.phone && <a href={`tel:${patient.phone}`} style={{ color:'#1a3a5c', fontWeight:'600' }}>{patient.phone}</a>}
-                {patient.hmo && <span>{patient.hmo}</span>}
+                {fundingLabel && <span style={{ background:'#dbeafe', color:'#1e40af', padding:'1px 8px', borderRadius:'12px', fontWeight:'600' }}>💰 {fundingLabel}</span>}
                 {patient.diagnosis && <span style={{ color:'#7c3aed' }}>• {patient.diagnosis}</span>}
               </div>
             </div>
@@ -228,7 +236,6 @@ export default function PatientProfilePage() {
               const today = new Date().toISOString().split('T')[0]
               const nextAppt = appointments.find(a => a.date >= today && a.status !== 'cancelled')
               const lastAppt = appointments.find(a => a.date <= today && a.status === 'completed')
-              const isFirstTime = appointments.filter(a => a.status === 'completed').length === 0
               return (
                 <>
                   {nextAppt && (
@@ -376,8 +383,37 @@ export default function PatientProfilePage() {
               <h3 style={{ fontWeight:'700', marginBottom:'14px', fontSize:'13px', color:'#64748b' }}>🏥 מידע רפואי</h3>
               {editing ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                  <div><label style={lbl}>קופ"ח</label><select style={inp} value={form.hmo||''} onChange={e=>set('hmo',e.target.value)}><option value="">בחר...</option>{HMO_OPTIONS.map(h=><option key={h}>{h}</option>)}</select></div>
-                  <div><label style={lbl}>ביטוח</label><input style={inp} value={form.insurance||''} onChange={e=>set('insurance',e.target.value)}/></div>
+                  {/* סוג מימון */}
+                  <div style={{gridColumn:'1/-1'}}>
+                    <label style={lbl}>סוג מימון</label>
+                    <select style={inp} value={form.funding_type||'self'} onChange={e=>set('funding_type',e.target.value)}>
+                      <option value="self">עצמי</option>
+                      <option value="hmo">קופת חולים</option>
+                      <option value="insurance">ביטוח פרטי</option>
+                      <option value="group">קבוצה</option>
+                    </select>
+                  </div>
+                  {form.funding_type==='hmo' && (
+                    <div style={{gridColumn:'1/-1'}}>
+                      <label style={lbl}>קופת חולים</label>
+                      <select style={inp} value={form.hmo||''} onChange={e=>set('hmo',e.target.value)}>
+                        <option value="">בחר...</option>
+                        {HMO_OPTIONS.map(h=><option key={h}>{h}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {form.funding_type==='insurance' && (
+                    <div style={{gridColumn:'1/-1'}}>
+                      <label style={lbl}>חברת ביטוח</label>
+                      <input style={inp} value={form.insurance||''} onChange={e=>set('insurance',e.target.value)} placeholder="מגדל, כלל, מנורה..."/>
+                    </div>
+                  )}
+                  {form.funding_type==='group' && (
+                    <div style={{gridColumn:'1/-1'}}>
+                      <label style={lbl}>שם הקבוצה</label>
+                      <input style={inp} value={form.funding_group_name||''} onChange={e=>set('funding_group_name',e.target.value)} placeholder="מכבי, צבא, עבודה..."/>
+                    </div>
+                  )}
                   <div style={{gridColumn:'1/-1'}}><label style={lbl}>אבחנה</label><input style={inp} value={form.diagnosis||''} onChange={e=>set('diagnosis',e.target.value)}/></div>
                   <div style={{gridColumn:'1/-1'}}><label style={lbl}>רקע רפואי</label><textarea style={ta} value={form.medical_history||''} onChange={e=>set('medical_history',e.target.value)}/></div>
                   <div><label style={lbl}>תרופות</label><input style={inp} value={form.medications||''} onChange={e=>set('medications',e.target.value)}/></div>
@@ -385,7 +421,13 @@ export default function PatientProfilePage() {
                 </div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                  {[['קופ"ח',patient.hmo],['ביטוח',patient.insurance],['אבחנה',patient.diagnosis],['רקע רפואי',patient.medical_history],['תרופות',patient.medications],['אלרגיות',patient.allergies]].filter(([,v])=>v).map(([l,v])=>(
+                  {[
+                    ['גורם מממן', fundingLabel],
+                    ['אבחנה',patient.diagnosis],
+                    ['רקע רפואי',patient.medical_history],
+                    ['תרופות',patient.medications],
+                    ['אלרגיות',patient.allergies]
+                  ].filter(([,v])=>v).map(([l,v])=>(
                     <div key={l as string} style={{display:'flex',gap:'8px',fontSize:'13px'}}>
                       <span style={{color:'#94a3b8',minWidth:'80px',flexShrink:0}}>{l}</span>
                       <span style={{fontWeight:'500',color:'#1e293b'}}>{v}</span>
@@ -479,7 +521,6 @@ export default function PatientProfilePage() {
               </button>
             </div>
 
-            {/* New goal form */}
             {showGoalForm && (
               <div style={{ background:'#fff', borderRadius:'12px', padding:'18px', marginBottom:'14px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', border:'2px solid #3eb8e5' }}>
                 <div style={{ fontWeight:'700', fontSize:'13px', color:'#1a3a5c', marginBottom:'14px' }}>🎯 מטרה חדשה</div>
@@ -521,7 +562,6 @@ export default function PatientProfilePage() {
               </div>
             )}
 
-            {/* Goals list */}
             {goals.length === 0 && !showGoalForm ? (
               <div style={{ background:'#fff', borderRadius:'12px', padding:'40px', textAlign:'center', color:'#94a3b8', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize:'32px', marginBottom:'8px' }}>🎯</div>
@@ -541,7 +581,6 @@ export default function PatientProfilePage() {
               const sc = statusColors[g.status] || { bg:'#f1f5f9', color:'#475569' }
               return (
                 <div key={g.id} style={{ background:'#fff', borderRadius:'12px', padding:'16px', marginBottom:'10px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', borderRight: g.status === 'הושג' ? '4px solid #10b981' : '4px solid #3eb8e5' }}>
-                  {/* Goal header */}
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
                     <div style={{ flex:1 }}>
                       <div style={{ fontWeight:'800', fontSize:'15px', color:'#1a3a5c' }}>
@@ -566,7 +605,6 @@ export default function PatientProfilePage() {
                     </select>
                   </div>
 
-                  {/* Updates timeline */}
                   {updates.length > 0 && (
                     <div style={{ marginBottom:'10px', padding:'10px', background:'#f8fafc', borderRadius:'8px' }}>
                       <div style={{ fontSize:'10px', fontWeight:'700', color:'#94a3b8', marginBottom:'6px', textTransform:'uppercase' }}>היסטוריית עדכונים</div>
@@ -579,7 +617,6 @@ export default function PatientProfilePage() {
                     </div>
                   )}
 
-                  {/* Add update */}
                   {g.status !== 'הושג' && (
                     <div style={{ display:'flex', gap:'8px' }}>
                       <input
