@@ -35,6 +35,7 @@ export default function Sidebar() {
     ]},
     { section: 'ניהול', items: [
       { href: '/reports',      icon: '📈', label: 'דוחות',         show: isAdmin },
+      { href: '/letters',     icon: '📝', label: 'מכתבים רפואיים', show: isAdmin || isTherapist },
       { href: '/reports-pdf',  icon: '📄', label: 'דוחות PDF',     show: isAdmin },
       { href: '/predictive',   icon: '🎯', label: 'סיכון נשירה',   show: isAdmin },
       { href: '/admin',      icon: '👤', label: 'משתמשים',       show: isAdmin },
