@@ -128,6 +128,8 @@ export default function PatientProfilePage() {
   const [goalForm, setGoalForm] = useState({ action: '', measure: '', difficulty: 'ללא קושי', target_date: '', notes: '' })
   const [updateText, setUpdateText] = useState<Record<string,string>>({})
   const [goalUpdates, setGoalUpdates] = useState<Record<string,any[]>>({})
+  const [archiving, setArchiving] = useState(false)
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
 
   useEffect(() => { if (id) loadAll() }, [id])
 
@@ -196,6 +198,19 @@ export default function PatientProfilePage() {
     loadAll()
   }
 
+  // סיום סדרה → ארכיון
+  async function finishSeries() {
+    setArchiving(true)
+    await supabase.from('patients').update({
+      is_archived: true,
+      status: 'inactive',
+      series_end_date: new Date().toISOString().split('T')[0],
+    }).eq('id', id)
+    setArchiving(false)
+    setShowArchiveConfirm(false)
+    router.push('/patients')
+  }
+
   const totalPaid = billing.filter(b => b.status === 'paid').reduce((s, b) => s + (b.amount || 0), 0)
 
   if (loading) return <AppLayout><div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', color:'#94a3b8' }}>טוען...</div></AppLayout>
@@ -215,6 +230,29 @@ export default function PatientProfilePage() {
   return (
     <AppLayout>
       <div style={{ padding:'20px 24px' }} className="fade-in">
+
+        {/* אישור סיום סדרה */}
+        {showArchiveConfirm && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }}>
+            <div style={{ background:'#fff', borderRadius:'16px', padding:'28px', maxWidth:'380px', width:'90%', textAlign:'center' }}>
+              <div style={{ fontSize:'40px', marginBottom:'12px' }}>📦</div>
+              <div style={{ fontSize:'18px', fontWeight:'800', color:'#1a3a5c', marginBottom:'8px' }}>סיום סדרת טיפולים</div>
+              <div style={{ fontSize:'13px', color:'#64748b', marginBottom:'24px', lineHeight:'1.6' }}>
+                המטופל <strong>{patient.first_name} {patient.last_name}</strong> יועבר לארכיון.<br/>
+                ניתן להחזיר בכל עת מדף הארכיון.
+              </div>
+              <div style={{ display:'flex', gap:'10px' }}>
+                <button onClick={() => setShowArchiveConfirm(false)} style={{ flex:1, padding:'11px', border:'1px solid #e2e8f0', borderRadius:'10px', background:'#fff', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                  ביטול
+                </button>
+                <button onClick={finishSeries} disabled={archiving} style={{ flex:1, padding:'11px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:'800', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+                  {archiving ? '⏳...' : '✅ אשר סיום סדרה'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'20px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'14px' }}>
@@ -272,6 +310,10 @@ export default function PatientProfilePage() {
             {patient && <HEPPanel patient={patient} />}
             <button onClick={() => setEditing(!editing)} style={{ padding:'8px 14px', background:editing?'#e2e8f0':'#1a3a5c', color:editing?'#475569':'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
               {editing ? 'ביטול' : '✏️ עריכה'}
+            </button>
+            {/* כפתור סיום סדרה */}
+            <button onClick={() => setShowArchiveConfirm(true)} style={{ padding:'8px 14px', background:'#fee2e2', color:'#dc2626', border:'1px solid #fca5a5', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
+              📦 סיום סדרה
             </button>
           </div>
         </div>
@@ -383,7 +425,6 @@ export default function PatientProfilePage() {
               <h3 style={{ fontWeight:'700', marginBottom:'14px', fontSize:'13px', color:'#64748b' }}>🏥 מידע רפואי</h3>
               {editing ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                  {/* סוג מימון */}
                   <div style={{gridColumn:'1/-1'}}>
                     <label style={lbl}>סוג מימון</label>
                     <select style={inp} value={form.funding_type||'self'} onChange={e=>set('funding_type',e.target.value)}>
@@ -454,7 +495,6 @@ export default function PatientProfilePage() {
                 {intakeSaving?'⏳ שומר...':'💾 שמור ראיון'}
               </button>
             </div>
-
             <div style={card}>
               <h3 style={{fontWeight:'700',marginBottom:'14px',fontSize:'13px',color:'#1a3a5c',borderBottom:'1px solid #f1f5f9',paddingBottom:'8px'}}>📋 רקע ואבחנות</h3>
               <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -465,7 +505,6 @@ export default function PatientProfilePage() {
                 <div><label style={lbl}>תפקוד ADL</label><textarea style={ta} value={intake.adl||''} onChange={e=>setI('adl',e.target.value)}/></div>
               </div>
             </div>
-
             <div style={card}>
               <h3 style={{fontWeight:'700',marginBottom:'14px',fontSize:'13px',color:'#1a3a5c',borderBottom:'1px solid #f1f5f9',paddingBottom:'8px'}}>🔍 בדיקה</h3>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
@@ -475,7 +514,6 @@ export default function PatientProfilePage() {
                 <div><label style={lbl}>תחושה</label><textarea style={{...ta,minHeight:'60px'}} value={intake.exam_sensation||''} onChange={e=>setI('exam_sensation',e.target.value)}/></div>
               </div>
             </div>
-
             <div style={card}>
               <h3 style={{fontWeight:'700',marginBottom:'14px',fontSize:'13px',color:'#1a3a5c',borderBottom:'1px solid #f1f5f9',paddingBottom:'8px'}}>🎯 מטרות ותוכנית</h3>
               <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -483,7 +521,6 @@ export default function PatientProfilePage() {
                 <div><label style={lbl}>תוכנית טיפול</label><textarea style={{...ta,minHeight:'100px'}} value={intake.treatment_plan||''} onChange={e=>setI('treatment_plan',e.target.value)}/></div>
               </div>
             </div>
-
             <div style={card}>
               <h3 style={{fontWeight:'700',marginBottom:'14px',fontSize:'13px',color:'#1a3a5c',borderBottom:'1px solid #f1f5f9',paddingBottom:'8px'}}>✅ אישורים</h3>
               <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
@@ -495,14 +532,12 @@ export default function PatientProfilePage() {
                   { key:'patient_consent', label:'המטופל נתן הסכמתו להצבת המטרות' },
                 ].map(item => (
                   <label key={item.key} style={{display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',fontSize:'13px',fontWeight:'500'}}>
-                    <input type="checkbox" checked={!!intake[item.key]} onChange={e=>setI(item.key,e.target.checked)}
-                      style={{width:'18px',height:'18px',cursor:'pointer'}}/>
+                    <input type="checkbox" checked={!!intake[item.key]} onChange={e=>setI(item.key,e.target.checked)} style={{width:'18px',height:'18px',cursor:'pointer'}}/>
                     {item.label}
                   </label>
                 ))}
               </div>
             </div>
-
             <div style={{display:'flex',justifyContent:'flex-end',paddingBottom:'20px'}}>
               <button onClick={saveIntake} disabled={intakeSaving} style={{padding:'10px 28px',background:intakeSaving?'#94a3b8':'#1a3a5c',color:'#fff',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'700',cursor:'pointer',fontFamily:'Heebo, sans-serif'}}>
                 {intakeSaving?'⏳ שומר...':'💾 שמור ראיון קבלה'}
@@ -516,95 +551,48 @@ export default function PatientProfilePage() {
           <div>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px' }}>
               <div style={{ fontSize:'14px', fontWeight:'700', color:'#1a3a5c' }}>מטרות טיפול SMART</div>
-              <button onClick={() => setShowGoalForm(true)} style={{ padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
-                + מטרה חדשה
-              </button>
+              <button onClick={() => setShowGoalForm(true)} style={{ padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>+ מטרה חדשה</button>
             </div>
-
             {showGoalForm && (
               <div style={{ background:'#fff', borderRadius:'12px', padding:'18px', marginBottom:'14px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', border:'2px solid #3eb8e5' }}>
                 <div style={{ fontWeight:'700', fontSize:'13px', color:'#1a3a5c', marginBottom:'14px' }}>🎯 מטרה חדשה</div>
                 <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                  <div>
-                    <label style={lbl}>פעולה — מה המטופל יעשה</label>
-                    <input style={inp} value={goalForm.action} onChange={e=>setG('action',e.target.value)} placeholder="ילך, ירוץ, יעלה מדרגות, ירים משקל..." />
-                  </div>
-                  <div>
-                    <label style={lbl}>מדד — כמה / כמה זמן</label>
-                    <input style={inp} value={goalForm.measure} onChange={e=>setG('measure',e.target.value)} placeholder="10 דקות, 500 מטר, 15 קילו, 90 מעלות..." />
-                  </div>
+                  <div><label style={lbl}>פעולה — מה המטופל יעשה</label><input style={inp} value={goalForm.action} onChange={e=>setG('action',e.target.value)} placeholder="ילך, ירוץ, יעלה מדרגות..."/></div>
+                  <div><label style={lbl}>מדד — כמה / כמה זמן</label><input style={inp} value={goalForm.measure} onChange={e=>setG('measure',e.target.value)} placeholder="10 דקות, 500 מטר..."/></div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px' }}>
-                    <div>
-                      <label style={lbl}>רמת קושי</label>
-                      <select style={inp} value={goalForm.difficulty} onChange={e=>setG('difficulty',e.target.value)}>
-                        <option>ללא קושי</option>
-                        <option>עם קושי קל</option>
-                        <option>באופן עצמאי</option>
-                        <option>עם עזר חיצוני</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={lbl}>תאריך יעד</label>
-                      <input type="date" style={inp} value={goalForm.target_date} onChange={e=>setG('target_date',e.target.value)} />
-                    </div>
+                    <div><label style={lbl}>רמת קושי</label><select style={inp} value={goalForm.difficulty} onChange={e=>setG('difficulty',e.target.value)}><option>ללא קושי</option><option>עם קושי קל</option><option>באופן עצמאי</option><option>עם עזר חיצוני</option></select></div>
+                    <div><label style={lbl}>תאריך יעד</label><input type="date" style={inp} value={goalForm.target_date} onChange={e=>setG('target_date',e.target.value)}/></div>
                   </div>
-                  <div>
-                    <label style={lbl}>הערות</label>
-                    <input style={inp} value={goalForm.notes} onChange={e=>setG('notes',e.target.value)} placeholder="הקשר קליני, רלוונטיות תפקודית..." />
-                  </div>
+                  <div><label style={lbl}>הערות</label><input style={inp} value={goalForm.notes} onChange={e=>setG('notes',e.target.value)}/></div>
                   <div style={{ display:'flex', gap:'8px', marginTop:'4px' }}>
                     <button onClick={() => setShowGoalForm(false)} style={{ padding:'9px 16px', border:'1px solid #e2e8f0', borderRadius:'8px', background:'#fff', fontSize:'13px', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>ביטול</button>
-                    <button onClick={saveGoal} disabled={goalSaving} style={{ flex:1, padding:'9px', background:goalSaving?'#94a3b8':'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
-                      {goalSaving ? '⏳ שומר...' : '💾 שמור מטרה'}
-                    </button>
+                    <button onClick={saveGoal} disabled={goalSaving} style={{ flex:1, padding:'9px', background:goalSaving?'#94a3b8':'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>{goalSaving?'⏳ שומר...':'💾 שמור מטרה'}</button>
                   </div>
                 </div>
               </div>
             )}
-
             {goals.length === 0 && !showGoalForm ? (
               <div style={{ background:'#fff', borderRadius:'12px', padding:'40px', textAlign:'center', color:'#94a3b8', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize:'32px', marginBottom:'8px' }}>🎯</div>
                 <div>אין מטרות טיפול עדיין</div>
-                <button onClick={() => setShowGoalForm(true)} style={{ marginTop:'12px', padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>
-                  הגדר מטרה ראשונה
-                </button>
+                <button onClick={() => setShowGoalForm(true)} style={{ marginTop:'12px', padding:'8px 16px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>הגדר מטרה ראשונה</button>
               </div>
             ) : goals.map(g => {
               const updates = goalUpdates[g.id] || []
-              const statusColors: Record<string,{bg:string;color:string}> = {
-                'בתהליך':  { bg:'#fef3c7', color:'#92400e' },
-                'הושג':    { bg:'#d1fae5', color:'#065f46' },
-                'עודכן':   { bg:'#dbeafe', color:'#1e40af' },
-                'לא הושג': { bg:'#fee2e2', color:'#991b1b' },
-              }
+              const statusColors: Record<string,{bg:string;color:string}> = { 'בתהליך':{ bg:'#fef3c7', color:'#92400e' }, 'הושג':{ bg:'#d1fae5', color:'#065f46' }, 'עודכן':{ bg:'#dbeafe', color:'#1e40af' }, 'לא הושג':{ bg:'#fee2e2', color:'#991b1b' } }
               const sc = statusColors[g.status] || { bg:'#f1f5f9', color:'#475569' }
               return (
                 <div key={g.id} style={{ background:'#fff', borderRadius:'12px', padding:'16px', marginBottom:'10px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)', borderRight: g.status === 'הושג' ? '4px solid #10b981' : '4px solid #3eb8e5' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'10px' }}>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontWeight:'800', fontSize:'15px', color:'#1a3a5c' }}>
-                        {g.status === 'הושג' ? '✅ ' : '🎯 '}
-                        {g.action} — {g.measure}
-                      </div>
-                      <div style={{ fontSize:'12px', color:'#64748b', marginTop:'3px' }}>
-                        {g.difficulty}
-                        {g.target_date && ` · יעד: ${new Date(g.target_date).toLocaleDateString('he-IL')}`}
-                      </div>
+                      <div style={{ fontWeight:'800', fontSize:'15px', color:'#1a3a5c' }}>{g.status === 'הושג' ? '✅ ' : '🎯 '}{g.action} — {g.measure}</div>
+                      <div style={{ fontSize:'12px', color:'#64748b', marginTop:'3px' }}>{g.difficulty}{g.target_date && ` · יעד: ${new Date(g.target_date).toLocaleDateString('he-IL')}`}</div>
                       {g.notes && <div style={{ fontSize:'11px', color:'#94a3b8', marginTop:'2px' }}>{g.notes}</div>}
                     </div>
-                    <select value={g.status} onChange={e => updateGoalStatus(g.id, e.target.value)} style={{
-                      padding:'4px 8px', border:`1px solid ${sc.color}30`, borderRadius:'20px',
-                      fontSize:'11px', fontWeight:'700', cursor:'pointer',
-                      background: sc.bg, color: sc.color, fontFamily:'Heebo, sans-serif', outline:'none', marginRight:'8px'
-                    }}>
-                      <option>בתהליך</option>
-                      <option>הושג</option>
-                      <option>עודכן</option>
-                      <option>לא הושג</option>
+                    <select value={g.status} onChange={e => updateGoalStatus(g.id, e.target.value)} style={{ padding:'4px 8px', border:`1px solid ${sc.color}30`, borderRadius:'20px', fontSize:'11px', fontWeight:'700', cursor:'pointer', background: sc.bg, color: sc.color, fontFamily:'Heebo, sans-serif', outline:'none', marginRight:'8px' }}>
+                      <option>בתהליך</option><option>הושג</option><option>עודכן</option><option>לא הושג</option>
                     </select>
                   </div>
-
                   {updates.length > 0 && (
                     <div style={{ marginBottom:'10px', padding:'10px', background:'#f8fafc', borderRadius:'8px' }}>
                       <div style={{ fontSize:'10px', fontWeight:'700', color:'#94a3b8', marginBottom:'6px', textTransform:'uppercase' }}>היסטוריית עדכונים</div>
@@ -616,22 +604,10 @@ export default function PatientProfilePage() {
                       ))}
                     </div>
                   )}
-
                   {g.status !== 'הושג' && (
                     <div style={{ display:'flex', gap:'8px' }}>
-                      <input
-                        value={updateText[g.id] || ''}
-                        onChange={e => setUpdateText(p => ({ ...p, [g.id]: e.target.value }))}
-                        onKeyDown={e => e.key === 'Enter' && addGoalUpdate(g.id)}
-                        placeholder="הוסף עדכון התקדמות..."
-                        style={{ ...inp, fontSize:'12px', flex:1 }}
-                      />
-                      <button onClick={() => addGoalUpdate(g.id)} style={{
-                        padding:'7px 14px', background:'#3eb8e5', color:'#fff', border:'none',
-                        borderRadius:'7px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif'
-                      }}>
-                        + עדכן
-                      </button>
+                      <input value={updateText[g.id] || ''} onChange={e => setUpdateText(p => ({ ...p, [g.id]: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addGoalUpdate(g.id)} placeholder="הוסף עדכון התקדמות..." style={{ ...inp, fontSize:'12px', flex:1 }}/>
+                      <button onClick={() => addGoalUpdate(g.id)} style={{ padding:'7px 14px', background:'#3eb8e5', color:'#fff', border:'none', borderRadius:'7px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>+ עדכן</button>
                     </div>
                   )}
                 </div>
@@ -647,9 +623,7 @@ export default function PatientProfilePage() {
               <div style={{fontWeight:'700',fontSize:'14px'}}>היסטוריית תורים</div>
               <Link href={`/calendar/new?patient=${id}`} style={{padding:'6px 12px',background:'#3eb8e5',color:'#fff',borderRadius:'6px',fontSize:'12px',fontWeight:'600'}}>+ תור חדש</Link>
             </div>
-            {appointments.length===0?(
-              <div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין תורים</div>
-            ):appointments.map((a,i)=>(
+            {appointments.length===0?(<div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין תורים</div>):appointments.map((a,i)=>(
               <div key={a.id} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 18px',borderBottom:i<appointments.length-1?'1px solid #f8fafc':'none'}}>
                 <div style={{fontWeight:'600',fontSize:'13px',minWidth:'90px',color:'#1a3a5c'}}>{new Date(a.date).toLocaleDateString('he-IL')}</div>
                 <div style={{fontSize:'13px',color:'#64748b',minWidth:'50px'}}>{a.time?.slice(0,5)}</div>
@@ -667,9 +641,7 @@ export default function PatientProfilePage() {
             <div style={{display:'flex',justifyContent:'flex-end'}}>
               <Link href={`/records/new?patient=${id}`} style={{padding:'8px 14px',background:'#7c3aed',color:'#fff',borderRadius:'8px',fontSize:'12px',fontWeight:'700'}}>+ רשומת SOAP חדשה</Link>
             </div>
-            {records.length===0?(
-              <div style={{background:'#fff',borderRadius:'12px',padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין רשומות SOAP</div>
-            ):records.map(r=>(
+            {records.length===0?(<div style={{background:'#fff',borderRadius:'12px',padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין רשומות SOAP</div>):records.map(r=>(
               <div key={r.id} style={{background:'#fff',borderRadius:'10px',padding:'16px',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px'}}>
                   <div style={{fontWeight:'700',fontSize:'13px'}}>{new Date(r.created_at).toLocaleDateString('he-IL')}</div>
@@ -696,9 +668,7 @@ export default function PatientProfilePage() {
               </div>
               <Link href={`/billing/new?patient=${id}`} style={{padding:'6px 12px',background:'#0b8a5e',color:'#fff',borderRadius:'6px',fontSize:'12px',fontWeight:'600'}}>+ חיוב חדש</Link>
             </div>
-            {billing.length===0?(
-              <div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין חיובים</div>
-            ):billing.map((b,i)=>(
+            {billing.length===0?(<div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין חיובים</div>):billing.map((b,i)=>(
               <div key={b.id} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 18px',borderBottom:i<billing.length-1?'1px solid #f8fafc':'none'}}>
                 <div style={{fontWeight:'600',fontSize:'13px',minWidth:'90px'}}>{new Date(b.created_at).toLocaleDateString('he-IL')}</div>
                 <div style={{flex:1,fontSize:'13px',color:'#64748b'}}>{b.description||'טיפול'}</div>
