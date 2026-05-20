@@ -42,20 +42,20 @@ export default function InsolesPage() {
 
         <div style={{ padding: '50px 24px 80px', textAlign: 'center', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ display: 'inline-block', background: 'rgba(62,184,229,0.15)', border: '1px solid rgba(62,184,229,0.3)', borderRadius: '20px', padding: '6px 16px', marginBottom: '20px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#3eb8e5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>מדרסים אורטופדיים בהתאמה אישית | קליניקת יואב אבני PT</span>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#3eb8e5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>מדרסים אורטופדיים בהתאמה אישית | סריקה דיגיטלית</span>
           </div>
           <h1 style={{ fontSize: '40px', fontWeight: '900', color: '#fff', lineHeight: '1.2', marginBottom: '16px', letterSpacing: '-1px' }}>
             מדרס בהתאמה אישית<br/>
             <span style={{ color: '#3eb8e5' }}>שמותאם בדיוק לרגל שלך.</span>
           </h1>
           <p style={{ fontSize: '17px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.7', marginBottom: '32px', maxWidth: '560px', margin: '0 auto 32px' }}>
-            סריקה דיגיטלית עם <strong style={{ color: '#3eb8e5' }}>Albert Pressure</strong> — 5,184 חיישנים שמנתחים את כפות הרגליים שלך. בליווי יואב אבני, פיזיותרפיסט מוסמך. לא מדרס מהמדף — מדרס שבנוי בדיוק בשבילך.
+            סריקה דיגיטלית עם <strong style={{ color: '#3eb8e5' }}>Albert 2 Pro</strong> של אאטרקס — 5,184 חיישנים מצופי זהב ו-4 מצלמות עומק שמנתחים את כפות הרגליים שלך בדיוק מלא. בליווי פיזיותרפיסט מוסמך. לא מדרס מהמדף — מדרס שבנוי בדיוק בשבילך.
           </p>
           <a href="#form" style={{ display: 'inline-block', padding: '16px 36px', background: '#3eb8e5', color: '#fff', borderRadius: '12px', fontSize: '16px', fontWeight: '800', textDecoration: 'none', boxShadow: '0 8px 24px rgba(62,184,229,0.4)' }}>
             לתיאום סריקה ←
           </a>
           <div style={{ marginTop: '16px', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-            ✅ החזרים מקופות חולים וביטוח פרטי &nbsp;|&nbsp; ✅ בפניית רופא
+            ✅ ניתן לקבל החזר מקופת החולים / ביטוח פרטי &nbsp;|&nbsp; ✅ בפניית רופא
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export default function InsolesPage() {
         </svg>
       </div>
 
-      {/* מה זה מדרס בהתאמה אישית */}
+      {/* מה זה מדרס */}
       <div style={{ padding: '60px 24px 20px', maxWidth: '860px', margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '12px' }}>מה זה בעצם מדרס בהתאמה אישית?</h2>
         <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '36px', lineHeight: '1.8', maxWidth: '680px', margin: '0 auto 36px' }}>
@@ -72,9 +72,9 @@ export default function InsolesPage() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px' }}>
           {[
-            { icon: '📡', title: '5,184 חיישנים', text: 'סורק Albert Pressure מודד כל נקודת לחץ בדיוק מלא — גם בעמידה וגם בהליכה' },
-            { icon: '🏥', title: 'פיזיותרפיסט בתהליך', text: 'יואב אבני PT מלווה כל סריקה — מוסיף בדיקה קלינית שלא ניתן לקבל בחנות' },
-            { icon: '💳', title: 'החזרים מקופ"ח', text: 'ניתן לקבל החזר מקופת החולים ומביטוח פרטי בהצגת פניית רופא' },
+            { icon: '📡', title: '5,184 חיישנים + 4 מצלמות', text: 'סורק Albert 2 Pro מודד כל נקודת לחץ בדיוק של מילימטר — גם בעמידה וגם בהליכה' },
+            { icon: '🏥', title: 'פיזיותרפיסט בתהליך', text: 'פיזיותרפיסט מוסמך מלווה כל סריקה — מוסיף בדיקה קלינית שלא ניתן לקבל בחנות' },
+            { icon: '💳', title: 'החזרים מקופ"ח וביטוח', text: 'ניתן לקבל החזר מקופת החולים ומביטוח פרטי — המטופל מגיש ישירות מול הגוף המבטח' },
           ].map(f => (
             <div key={f.title} style={{ background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>{f.icon}</div>
@@ -90,16 +90,16 @@ export default function InsolesPage() {
         <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', borderRadius: '20px', padding: '32px', color: '#fff' }}>
           <div style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>🏥 למה לעשות זאת בקליניקת פיזיותרפיה ולא בחנות?</div>
           <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.8', marginBottom: '20px' }}>
-            בחנות מדרסים מקבלים סריקה — ותו לא. בקליניקת יואב אבני, הסריקה היא נקודת התחלה. יואב מבצע בדיקה פיזיותרפיסטית מלאה: בודק את הברך, הירך, הגב התחתון ואת הדפוס הביומכני כולו. כך המדרס מותאם לא רק לרגל — אלא לגוף כולו.
+            בחנות מדרסים מקבלים סריקה — ותו לא. בקליניקת פיזיותרפיה, הסריקה היא נקודת התחלה. הפיזיותרפיסט מבצע בדיקה קלינית מלאה: בודק את הברך, הירך, הגב התחתון ואת הדפוס הביומכני כולו. כך המדרס מותאם לא רק לרגל — אלא לגוף כולו.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {[
               'בדיקה ביומכנית מלאה לפני הסריקה',
               'התאמה לדפוס הליכה אישי',
-              'מעקב אחרי קבלת המדרס',
-              'ייעוץ לגבי הנעלה נכונה',
+              'אבחון בעיות נלוות — ברך, ירך, גב',
               'שילוב עם טיפול פיזיותרפיה במידת הצורך',
-              'סיוע בהגשת בקשת החזר לקופ"ח / ביטוח',
+              'הסבר מקצועי על ממצאי הסריקה',
+              'המשך ליווי זמין לשאלות ובעיות',
             ].map(item => (
               <div key={item} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px' }}>
                 <span style={{ color: '#3eb8e5', fontWeight: '700', flexShrink: 0 }}>✓</span> {item}
@@ -136,9 +136,9 @@ export default function InsolesPage() {
       {/* החזרים */}
       <div style={{ padding: '0 24px 40px', maxWidth: '860px', margin: '0 auto' }}>
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '16px', padding: '24px' }}>
-          <div style={{ fontWeight: '800', fontSize: '18px', color: '#065f46', marginBottom: '12px' }}>💰 החזרים מקופות חולים וביטוח</div>
+          <div style={{ fontWeight: '800', fontSize: '18px', color: '#065f46', marginBottom: '12px' }}>💰 החזרים מקופות חולים וביטוח פרטי</div>
           <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.8', marginBottom: '12px' }}>
-            מדרסים אורטופדיים בהתאמה אישית זכאים להחזר כספי מקופות החולים ומפוליסות ביטוח פרטיות — בהצגת פניית רופא. יואב יסייע לך בתהליך.
+            מדרסים אורטופדיים בהתאמה אישית זכאים להחזר כספי מקופות החולים ומפוליסות ביטוח פרטיות — בהצגת פניית רופא. ההחזר מוגש ישירות על ידי המטופל מול הקופה או חברת הביטוח שלו.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '8px' }}>
             {[
@@ -165,13 +165,12 @@ export default function InsolesPage() {
           <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>תשלום חד פעמי | ניתן לפריסה</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'right', marginBottom: '24px' }}>
             {[
-              'סריקת כף רגל עם Albert Pressure (5,184 חיישנים)',
+              'סריקה דיגיטלית עם Albert 2 Pro (5,184 חיישנים מצופי זהב)',
               'סריקה סטטית + דינמית בהליכה',
-              'בדיקה ביומכנית עם יואב אבני PT',
+              'בדיקה ביומכנית עם פיזיותרפיסט מוסמך',
               'מדרס מותאם אישית ברמת הגימור הגבוהה ביותר',
-              'הדרכה להנעלה נכונה',
-              'מעקב חודש אחרי קבלת המדרס',
-              'סיוע בהגשת בקשת החזר לקופ"ח / ביטוח',
+              'הסבר מלא על ממצאי הסריקה',
+              'ליווי זמין לשאלות ובעיות לאחר קבלת המדרס',
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '13px', color: '#374151' }}>
                 <span style={{ color: '#3eb8e5', fontWeight: '700', flexShrink: 0 }}>✓</span> {item}
@@ -191,7 +190,7 @@ export default function InsolesPage() {
             <div style={{ textAlign: 'center', padding: '20px' }}>
               <div style={{ fontSize: '56px', marginBottom: '16px' }}>🎉</div>
               <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c', marginBottom: '8px' }}>קיבלנו את הפרטים!</h3>
-              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.7' }}>יואב יחזור אליך בהקדם לתיאום מועד לסריקה.</p>
+              <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.7' }}>נחזור אליך בהקדם לתיאום מועד לסריקה.</p>
             </div>
           ) : (
             <>
@@ -223,7 +222,7 @@ export default function InsolesPage() {
                 }}>
                   {saving ? '⏳ שולח...' : 'שלח פרטים ←'}
                 </button>
-                <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', margin: 0 }}>יואב יחזור אליך תוך 24 שעות לתיאום מועד לסריקה</p>
+                <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', margin: 0 }}>נחזור אליך תוך 24 שעות לתיאום מועד לסריקה</p>
               </div>
             </>
           )}
