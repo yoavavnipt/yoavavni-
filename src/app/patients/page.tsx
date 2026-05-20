@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
+const FUNDER_TYPES = [
+  { id: 'private',   label: 'פרטי',         icon: '💳' },
+  { id: 'hmo',       label: 'קופת חולים',   icon: '🏥' },
+  { id: 'insurance', label: 'ביטוח',         icon: '🛡️' },
+  { id: 'team',      label: 'קבוצה',         icon: '⚽' },
+]
+
 export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([])
   const [search, setSearch] = useState('')
@@ -13,7 +20,17 @@ export default function PatientsPage() {
   const [selected, setSelected] = useState<string[]>([])
   const [archiving, setArchiving] = useState(false)
 
+  // גורם מממן
+  const [funderPanel, setFunderPanel] = useState<any>(null) // המטופל שנבחר לעריכת מממן
+  const [funderType, setFunderType] = useState('')
+  const [funderName, setFunderName] = useState('')
+  const [funderNames, setFunderNames] = useState<string[]>([]) // רשימה שמורה
+  const [newFunderName, setNewFunderName] = useState('')
+  const [showAddNew, setShowAddNew] = useState(false)
+  const [savingFunder, setSavingFunder] = useState(false)
+
   useEffect(() => { load() }, [search, filter, tab])
+  useEffect(() => { loadFunderNames() }, [])
 
   async function load() {
     setLoading(true)
@@ -42,6 +59,41 @@ export default function PatientsPage() {
     const { data } = await q
     setPatients(data || [])
     setLoading(false)
+  }
+
+  // שליפת שמות קבוצות/מממנים שמורים
+  async function loadFunderNames() {
+    const { data } = await supabase
+      .from('patients')
+      .select('funder_name')
+      .not('funder_name', 'is', null)
+      .neq('funder_name', '')
+    const names = Array.from(new Set((data || []).map((p: any) => p.funder_name).filter(Boolean))) as string[]
+    setFunderNames(names.sort())
+  }
+
+  function openFunderPanel(p: any) {
+    setFunderPanel(p)
+    setFunderType(p.funder_type || '')
+    setFunderName(p.funder_name || '')
+    setNewFunderName('')
+    setShowAddNew(false)
+  }
+
+  async function saveFunder() {
+    if (!funderPanel) return
+    setSavingFunder(true)
+    const finalName = showAddNew ? newFunderName : funderName
+    await supabase.from('patients').update({
+      funder_type: funderType,
+      funder_name: finalName,
+    }).eq('id', funderPanel.id)
+    setSavingFunder(false)
+    setFunderPanel(null)
+    if (showAddNew && newFunderName && !funderNames.includes(newFunderName)) {
+      setFunderNames(prev => [...prev, newFunderName].sort())
+    }
+    load()
   }
 
   function toggleSelect(id: string) {
@@ -108,7 +160,7 @@ export default function PatientsPage() {
           </div>
         </div>
 
-        {/* Main tabs: מטופלים / ארכיון */}
+        {/* Main tabs */}
         <div style={{ display: 'flex', gap: '0', marginBottom: '14px', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden', width: 'fit-content' }}>
           {[{ key: 'patients', label: '👥 מטופלים' }, { key: 'archive', label: '📦 ארכיון' }].map(t => (
             <button key={t.key} onClick={() => setTab(t.key as any)} style={{
@@ -166,7 +218,7 @@ export default function PatientsPage() {
                     <th style={{ padding: '10px 14px', width: '36px' }}>
                       <input type="checkbox" checked={selected.length === patients.length && patients.length > 0} onChange={toggleAll} style={{ cursor: 'pointer' }} />
                     </th>
-                    {['שם', 'טלפון', 'קופ"ח', 'אבחנה', 'סטטוס', 'פעולות'].map(h => (
+                    {['שם', 'טלפון', 'קופ"ח', 'אבחנה', 'גורם מממן', 'סטטוס', 'פעולות'].map(h => (
                       <th key={h} style={{ padding: '10px 14px', textAlign: 'right', fontWeight: '600', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                     ))}
                   </tr>
@@ -195,6 +247,20 @@ export default function PatientsPage() {
                       <td style={{ padding: '12px 14px', color: '#64748b' }}>{p.hmo || '—'}</td>
                       <td style={{ padding: '12px 14px', color: '#64748b', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.diagnosis || '—'}
+                      </td>
+                      {/* גורם מממן */}
+                      <td style={{ padding: '12px 14px' }}>
+                        <button onClick={() => openFunderPanel(p)} style={{
+                          padding: '4px 10px', border: '1px solid #e2e8f0', borderRadius: '6px',
+                          background: p.funder_type ? '#f0f9ff' : '#f8fafc',
+                          color: p.funder_type ? '#0369a1' : '#94a3b8',
+                          fontSize: '12px', fontWeight: p.funder_type ? '600' : '400',
+                          cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+                        }}>
+                          {p.funder_type
+                            ? `${FUNDER_TYPES.find(f => f.id === p.funder_type)?.icon || ''} ${p.funder_name || FUNDER_TYPES.find(f => f.id === p.funder_type)?.label || p.funder_type}`
+                            : '+ הוסף'}
+                        </button>
                       </td>
                       <td style={{ padding: '12px 14px' }}>
                         <StatusBadge status={p.status} />
@@ -227,6 +293,109 @@ export default function PatientsPage() {
             </div>
           )}
         </div>
+
+        {/* ── פאנל גורם מממן ── */}
+        {funderPanel && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            zIndex: 1000,
+          }} onClick={() => setFunderPanel(null)}>
+            <div onClick={e => e.stopPropagation()} style={{
+              background: '#fff', borderRadius: '20px 20px 0 0',
+              padding: '24px', width: '100%', maxWidth: '480px',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.15)',
+              direction: 'rtl',
+            }}>
+              {/* כותרת */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a5c' }}>💰 גורם מממן</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{funderPanel.first_name} {funderPanel.last_name}</div>
+                </div>
+                <button onClick={() => setFunderPanel(null)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+              </div>
+
+              {/* בחירת סוג */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px' }}>סוג מממן</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {FUNDER_TYPES.map(f => (
+                    <button key={f.id} onClick={() => { setFunderType(f.id); setFunderName(''); setShowAddNew(false) }} style={{
+                      padding: '10px', border: `2px solid ${funderType === f.id ? '#1a3a5c' : '#e2e8f0'}`,
+                      borderRadius: '10px', background: funderType === f.id ? '#1a3a5c' : '#fff',
+                      color: funderType === f.id ? '#fff' : '#374151',
+                      fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                      fontFamily: 'Heebo, sans-serif', display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                      <span style={{ fontSize: '18px' }}>{f.icon}</span> {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* שם ספציפי — רק אם נבחר סוג */}
+              {funderType && funderType !== 'private' && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px' }}>
+                    {funderType === 'team' ? 'שם הקבוצה' : funderType === 'hmo' ? 'שם קופת החולים' : 'שם חברת הביטוח'}
+                  </div>
+
+                  {/* רשימה שמורה */}
+                  {funderNames.length > 0 && !showAddNew && (
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginBottom: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {funderNames.map(name => (
+                        <div key={name} onClick={() => setFunderName(name)} style={{
+                          padding: '10px 14px', cursor: 'pointer', fontSize: '13px',
+                          background: funderName === name ? '#f0f9ff' : '#fff',
+                          color: funderName === name ? '#0369a1' : '#374151',
+                          fontWeight: funderName === name ? '600' : '400',
+                          borderBottom: '1px solid #f8fafc',
+                        }}>
+                          {funderName === name ? '✓ ' : ''}{name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* הוספת שם חדש */}
+                  {!showAddNew ? (
+                    <button onClick={() => setShowAddNew(true)} style={{
+                      width: '100%', padding: '9px', border: '1.5px dashed #cbd5e1',
+                      borderRadius: '8px', background: 'transparent', color: '#64748b',
+                      fontSize: '13px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif',
+                    }}>
+                      + הוסף שם חדש
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        autoFocus
+                        placeholder="הכנס שם חדש..."
+                        value={newFunderName}
+                        onChange={e => setNewFunderName(e.target.value)}
+                        style={{ flex: 1, padding: '9px 12px', border: '1.5px solid #1a3a5c', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', outline: 'none', direction: 'rtl' }}
+                      />
+                      <button onClick={() => setShowAddNew(false)} style={{ padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontFamily: 'Heebo, sans-serif' }}>ביטול</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* כפתור שמירה */}
+              <button onClick={saveFunder} disabled={savingFunder || !funderType} style={{
+                width: '100%', padding: '13px',
+                background: !funderType ? '#94a3b8' : '#1a3a5c',
+                color: '#fff', border: 'none', borderRadius: '10px',
+                fontSize: '14px', fontWeight: '800', cursor: !funderType ? 'not-allowed' : 'pointer',
+                fontFamily: 'Heebo, sans-serif',
+              }}>
+                {savingFunder ? '⏳ שומר...' : '💾 שמור'}
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </AppLayout>
   )
