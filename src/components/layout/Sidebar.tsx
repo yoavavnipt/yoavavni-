@@ -23,7 +23,6 @@ export default function Sidebar() {
       { href: '/calendar',  icon: '📅', label: 'יומן תורים', show: true },
     ]},
     { section: 'רפואי', items: [
-      { href: '/records',   icon: '📋', label: 'רשומות SOAP', show: true },
       { href: '/slots',     icon: '🕐', label: 'שעות פתוחות', show: true },
       { href: '/billing',   icon: '💰', label: 'חיוב וקבלות', show: isAdmin || isSecretary },
       { href: '/expenses',  icon: '💸', label: 'הוצאות',      show: isAdmin },
@@ -51,13 +50,7 @@ export default function Sidebar() {
   }
 
   return (
-    <div style={{
-      width: '210px', flexShrink: 0,
-      background: '#1a3a5c',
-      display: 'flex', flexDirection: 'column',
-      minHeight: '100vh',
-      position: 'sticky', top: 0, height: '100vh',
-    }}>
+    <div style={{ width: '210px', flexShrink: 0, background: '#1a3a5c', display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'sticky', top: 0, height: '100vh' }}>
       <div style={{ padding: '18px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <div style={{ fontSize: '20px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
           <span style={{ color: '#3eb8e5' }}>YOAV</span>AVNI
@@ -77,15 +70,7 @@ export default function Sidebar() {
               {visibleItems.map(item => {
                 const active = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
-                  <Link key={item.href} href={item.href} style={{
-                    display: 'flex', alignItems: 'center', gap: '9px',
-                    padding: '9px 16px',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.55)',
-                    background: active ? 'rgba(62,184,229,0.15)' : 'transparent',
-                    borderRight: active ? '3px solid #3eb8e5' : '3px solid transparent',
-                    fontWeight: active ? '600' : '400',
-                    fontSize: '13px', textDecoration: 'none', transition: 'all 0.15s',
-                  }}>
+                  <Link key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '9px 16px', color: active ? '#fff' : 'rgba(255,255,255,0.55)', background: active ? 'rgba(62,184,229,0.15)' : 'transparent', borderRight: active ? '3px solid #3eb8e5' : '3px solid transparent', fontWeight: active ? '600' : '400', fontSize: '13px', textDecoration: 'none', transition: 'all 0.15s' }}>
                     <span style={{ fontSize: '15px', width: '20px', textAlign: 'center', flexShrink: 0 }}>{item.icon}</span>
                     {item.label}
                   </Link>
