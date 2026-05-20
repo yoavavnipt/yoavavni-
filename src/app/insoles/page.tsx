@@ -33,14 +33,14 @@ export default function InsolesPage() {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg, #1a3a5c 0%, #0d2240 100%)', padding: '0', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '20px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href="https://www.yoav-avni-clinic.com" style={{ textDecoration: 'none' }}>
-            <img src={LOGO} style={{ height: '60px', objectFit: 'contain' }} alt="קליניקת יואב אבני" />
+            <img src={LOGO} style={{ height: '80px', objectFit: 'contain', mixBlendMode: 'screen' }} alt="קליניקת יואב אבני" />
           </a>
           <a href="https://www.yoav-avni-clinic.com" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', textDecoration: 'none' }}>← חזור לאתר</a>
         </div>
 
-        <div style={{ padding: '50px 24px 80px', textAlign: 'center', maxWidth: '700px', margin: '0 auto' }}>
+        <div style={{ padding: '40px 24px 80px', textAlign: 'center', maxWidth: '700px', margin: '0 auto' }}>
           <div style={{ display: 'inline-block', background: 'rgba(62,184,229,0.15)', border: '1px solid rgba(62,184,229,0.3)', borderRadius: '20px', padding: '6px 16px', marginBottom: '20px' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: '#3eb8e5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>מדרסים אורטופדיים בהתאמה אישית | סריקה דיגיטלית</span>
           </div>
@@ -49,13 +49,13 @@ export default function InsolesPage() {
             <span style={{ color: '#3eb8e5' }}>שמותאם בדיוק לרגל שלך.</span>
           </h1>
           <p style={{ fontSize: '17px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.7', marginBottom: '32px', maxWidth: '560px', margin: '0 auto 32px' }}>
-            סריקה דיגיטלית עם <strong style={{ color: '#3eb8e5' }}>Albert 2 Pro</strong> של אאטרקס — 5,184 חיישנים מצופי זהב ו-4 מצלמות עומק שמנתחים את כפות הרגליים שלך בדיוק מלא. בליווי פיזיותרפיסט מוסמך. לא מדרס מהמדף — מדרס שבנוי בדיוק בשבילך.
+            סריקה דיגיטלית עם <strong style={{ color: '#3eb8e5' }}>Albert 2 Pro</strong> של אאטרקס — 5,184 חיישנים ו-4 מצלמות עומק שמנתחים את כפות הרגליים שלך בדיוק של מילימטר. בליווי פיזיותרפיסט מוסמך. לא מדרס מהמדף — מדרס שבנוי בדיוק בשבילך.
           </p>
           <a href="#form" style={{ display: 'inline-block', padding: '16px 36px', background: '#3eb8e5', color: '#fff', borderRadius: '12px', fontSize: '16px', fontWeight: '800', textDecoration: 'none', boxShadow: '0 8px 24px rgba(62,184,229,0.4)' }}>
             לתיאום סריקה ←
           </a>
           <div style={{ marginTop: '16px', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-            ✅ ניתן לקבל החזר מקופת החולים / ביטוח פרטי &nbsp;|&nbsp; ✅ בפניית רופא
+            ✅ ניתן לקבל החזר מקופת החולים / ביטוח פרטי בהצגת פניית רופא
           </div>
         </div>
 
@@ -64,17 +64,35 @@ export default function InsolesPage() {
         </svg>
       </div>
 
-      {/* מה זה מדרס */}
-      <div style={{ padding: '60px 24px 20px', maxWidth: '860px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '12px' }}>מה זה בעצם מדרס בהתאמה אישית?</h2>
-        <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '36px', lineHeight: '1.8', maxWidth: '680px', margin: '0 auto 36px' }}>
-          מדרס מותאם אישית הוא תומך לכף הרגל שנבנה על בסיס הנתונים הייחודיים של <strong>הרגל שלך</strong> — לא גודל, לא קשת כללית — אלא מיפוי מדויק של נקודות הלחץ, צורת הקשת, ומרכז הכובד שלך בהליכה. התוצאה: מדרס שפותר את הבעיה, לא מסתיר אותה.
+      {/* תמונות הסורק והמדרסים */}
+      <div style={{ padding: '50px 24px 0', maxWidth: '860px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '28px', fontWeight: '800', color: '#1a3a5c', marginBottom: '12px', textAlign: 'center' }}>הטכנולוגיה — Albert 2 Pro</h2>
+        <p style={{ fontSize: '15px', color: '#64748b', marginBottom: '28px', lineHeight: '1.8', textAlign: 'center', maxWidth: '640px', margin: '0 auto 28px' }}>
+          הסורק המתקדם בעולם לכפות רגליים — 5,184 חיישנים ו-4 מצלמות Intel RealSense שמנתחות את הרגל בסריקה של 20 שניות בלבד. גם עמידה סטטית וגם הליכה דינמית.
         </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', aspectRatio: '16/10' }}>
+            <img src="https://sgbmedia.com/wp-content/uploads/2022/11/Aetrex-Albert-2-Pro-Military-Use.jpg"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              alt="סורק Albert 2 Pro"
+              onError={(e: any) => { e.target.style.display='none' }} />
+          </div>
+          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', aspectRatio: '16/10' }}>
+            <img src="https://www.orthoshop.com/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/c/u/custom-orthotics-orthoshop.jpg"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              alt="מדרסים אורטופדיים"
+              onError={(e: any) => { e.target.style.display='none' }} />
+          </div>
+        </div>
+      </div>
+
+      {/* 3 יתרונות */}
+      <div style={{ padding: '24px 24px 20px', maxWidth: '860px', margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px' }}>
           {[
-            { icon: '📡', title: '5,184 חיישנים + 4 מצלמות', text: 'סורק Albert 2 Pro מודד כל נקודת לחץ בדיוק של מילימטר — גם בעמידה וגם בהליכה' },
+            { icon: '📡', title: '5,184 חיישנים', text: 'סורק Albert 2 Pro מודד כל נקודת לחץ בדיוק של מילימטר — גם בעמידה וגם בהליכה' },
             { icon: '🏥', title: 'פיזיותרפיסט בתהליך', text: 'פיזיותרפיסט מוסמך מלווה כל סריקה — מוסיף בדיקה קלינית שלא ניתן לקבל בחנות' },
-            { icon: '💳', title: 'החזרים מקופ"ח וביטוח', text: 'ניתן לקבל החזר מקופת החולים ומביטוח פרטי — המטופל מגיש ישירות מול הגוף המבטח' },
+            { icon: '💳', title: 'החזרים מקופ"ח וביטוח', text: 'פניית רופא מקנה זכאות להחזר. המטופל מגיש את הבקשה ישירות מול הקופה או הביטוח שלו' },
           ].map(f => (
             <div key={f.title} style={{ background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: '32px', marginBottom: '12px' }}>{f.icon}</div>
@@ -99,7 +117,7 @@ export default function InsolesPage() {
               'אבחון בעיות נלוות — ברך, ירך, גב',
               'שילוב עם טיפול פיזיותרפיה במידת הצורך',
               'הסבר מקצועי על ממצאי הסריקה',
-              'המשך ליווי זמין לשאלות ובעיות',
+              'ליווי זמין לשאלות לאחר קבלת המדרס',
             ].map(item => (
               <div key={item} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px' }}>
                 <span style={{ color: '#3eb8e5', fontWeight: '700', flexShrink: 0 }}>✓</span> {item}
@@ -137,8 +155,8 @@ export default function InsolesPage() {
       <div style={{ padding: '0 24px 40px', maxWidth: '860px', margin: '0 auto' }}>
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '16px', padding: '24px' }}>
           <div style={{ fontWeight: '800', fontSize: '18px', color: '#065f46', marginBottom: '12px' }}>💰 החזרים מקופות חולים וביטוח פרטי</div>
-          <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.8', marginBottom: '12px' }}>
-            מדרסים אורטופדיים בהתאמה אישית זכאים להחזר כספי מקופות החולים ומפוליסות ביטוח פרטיות — בהצגת פניית רופא. ההחזר מוגש ישירות על ידי המטופל מול הקופה או חברת הביטוח שלו.
+          <div style={{ fontSize: '14px', color: '#374151', lineHeight: '1.8', marginBottom: '16px' }}>
+            <strong>פניית רופא למדרסים מקנה זכאות להחזר כספי</strong> מקופת החולים ומפוליסות ביטוח פרטיות. ההגשה היא תהליך בירוקרטי שהמטופל מבצע בעצמו ישירות מול הקופה או חברת הביטוח שלו.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '8px' }}>
             {[
@@ -165,7 +183,7 @@ export default function InsolesPage() {
           <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '24px' }}>תשלום חד פעמי | ניתן לפריסה</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'right', marginBottom: '24px' }}>
             {[
-              'סריקה דיגיטלית עם Albert 2 Pro (5,184 חיישנים מצופי זהב)',
+              'סריקה דיגיטלית עם Albert 2 Pro (5,184 חיישנים)',
               'סריקה סטטית + דינמית בהליכה',
               'בדיקה ביומכנית עם פיזיותרפיסט מוסמך',
               'מדרס מותאם אישית ברמת הגימור הגבוהה ביותר',
@@ -230,8 +248,8 @@ export default function InsolesPage() {
       </div>
 
       {/* Footer */}
-      <div style={{ background: '#1a3a5c', padding: '24px', textAlign: 'center' }}>
-        <img src={LOGO} style={{ height: '40px', objectFit: 'contain', marginBottom: '8px', filter: 'brightness(0) invert(1)' }} alt="לוגו" />
+      <div style={{ background: '#1a3a5c', padding: '28px', textAlign: 'center' }}>
+        <img src={LOGO} style={{ height: '60px', objectFit: 'contain', marginBottom: '10px', mixBlendMode: 'screen' }} alt="לוגו" />
         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>
           תרשיש 8, גילון · 054-5953889 · <a href="https://www.yoav-avni-clinic.com" style={{ color: '#3eb8e5' }}>yoav-avni-clinic.com</a>
         </div>
