@@ -13,27 +13,19 @@ const FUNDER_TYPES = [
 
 const MESSAGE_TEMPLATES = [
   {
-    id: 'running',
-    icon: '🏃',
-    label: 'קהילת ריצה',
+    id: 'running', icon: '🏃', label: 'קהילת ריצה',
     text: `שלום {שם} 😊\n\nאנחנו רוצים לשתף אותך בפרויקט חדש ומרגש שאנחנו מקיימים בקליניקה — קבוצת ריצה מקצועית בליווי פיזיותרפיסט!\n\n🏃 תוכנית ריצה מותאמת אישית\n📊 מעקב עומסים למניעת פציעות\n🏥 ליווי רפואי מלא\n\nמעוניין לשמוע עוד?\n👉 https://yoavavni-9dy3.vercel.app/running\n\nקליניקת יואב אבני`,
   },
   {
-    id: 'insoles',
-    icon: '👟',
-    label: 'מדרסים',
+    id: 'insoles', icon: '👟', label: 'מדרסים',
     text: `שלום {שם} 😊\n\nרצינו לעדכן אותך — בקליניקה יש עכשיו שירות חדש: מדרסים אורטופדיים בהתאמה אישית עם סורק דיגיטלי מתקדם!\n\n📡 סריקה דיגיטלית עם Albert 2 Pro\n🏥 ליווי פיזיותרפיסט מוסמך\n💳 ניתן לקבל החזר מקופ"ח / ביטוח\n\nלפרטים נוספים:\n👉 https://yoavavni-9dy3.vercel.app/insoles\n\nקליניקת יואב אבני`,
   },
   {
-    id: 'return',
-    icon: '💙',
-    label: 'החזרה לטיפול',
+    id: 'return', icon: '💙', label: 'החזרה לטיפול',
     text: `שלום {שם} 😊\n\nהיה לנו כיף לעבוד איתך! רצינו לבדוק — האם הכל בסדר? איך אתה מרגיש?\n\nאם יש משהו שמפריע או שפשוט רצית לעשות check-up — אנחנו כאן.\n\n📅 לתיאום תור:\nhttps://yoavavni-9dy3.vercel.app/portal\n\nקליניקת יואב אבני`,
   },
   {
-    id: 'custom',
-    icon: '✏️',
-    label: 'הודעה מותאמת',
+    id: 'custom', icon: '✏️', label: 'הודעה מותאמת',
     text: `שלום {שם} 😊\n\n`,
   },
 ]
@@ -65,6 +57,7 @@ export default function PatientsPage() {
   const [customMessage, setCustomMessage] = useState('')
   const [broadcastLoading, setBroadcastLoading] = useState(false)
   const [sentCount, setSentCount] = useState(0)
+  const [broadcastSearch, setBroadcastSearch] = useState('')
 
   useEffect(() => { load() }, [search, filter, tab])
   useEffect(() => { loadFunderNames() }, [])
@@ -110,11 +103,17 @@ export default function PatientsPage() {
     setBroadcastLoading(false)
   }
 
+  // מטופלים מסוננים לפי חיפוש בתוך פאנל תפוצה
+  const filteredBroadcastPatients = broadcastPatients.filter(p =>
+    broadcastSearch === '' ||
+    `${p.first_name} ${p.last_name}`.includes(broadcastSearch) ||
+    p.phone?.includes(broadcastSearch)
+  )
+
   function getMessageForPatient(patient: any) {
     const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
-    const name = `${patient.first_name} ${patient.last_name}`
     const text = selectedTemplate === 'custom' ? customMessage : template?.text || ''
-    return text.replace('{שם}', patient.first_name || name)
+    return text.replace('{שם}', patient.first_name || `${patient.first_name} ${patient.last_name}`)
   }
 
   function openWA(patient: any) {
@@ -127,10 +126,7 @@ export default function PatientsPage() {
     const toSend = broadcastPatients.filter(p => broadcastSelected.includes(p.id) && p.phone)
     setSentCount(0)
     toSend.forEach((p, i) => {
-      setTimeout(() => {
-        openWA(p)
-        setSentCount(c => c + 1)
-      }, i * 1500)
+      setTimeout(() => { openWA(p); setSentCount(c => c + 1) }, i * 1500)
     })
   }
 
@@ -189,7 +185,7 @@ export default function PatientsPage() {
                 {archiving ? '⏳...' : tab === 'archive' ? `↩️ החזר (${selected.length})` : `📦 ארכיון (${selected.length})`}
               </button>
             )}
-            <button onClick={() => setShowBroadcast(true)} style={{ padding: '9px 16px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+            <button onClick={() => { setShowBroadcast(true); setBroadcastSearch('') }} style={{ padding: '9px 16px', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
               📢 רשימת תפוצה
             </button>
             {tab === 'patients' && (
@@ -334,7 +330,7 @@ export default function PatientsPage() {
         {showBroadcast && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }} onClick={() => setShowBroadcast(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', direction: 'rtl' }}>
-              
+
               {/* כותרת */}
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><div style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c' }}>📢 רשימת תפוצה</div><div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>שליחת הודעות WhatsApp לקבוצת מטופלים</div></div>
@@ -342,8 +338,8 @@ export default function PatientsPage() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
-                
-                {/* צד שמאל — תבנית הודעה */}
+
+                {/* צד שמאל — תבנית */}
                 <div style={{ padding: '20px', borderLeft: '1px solid #f1f5f9', overflowY: 'auto' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '10px' }}>בחר תבנית הודעה</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -353,11 +349,10 @@ export default function PatientsPage() {
                       </button>
                     ))}
                   </div>
-                  
                   {selectedTemplate === 'custom' ? (
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>תוכן ההודעה</div>
-                      <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} placeholder="כתוב כאן את ההודעה... השתמש ב-{שם} להוסיף שם אישי"
+                      <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} placeholder="כתוב כאן... השתמש ב-{שם} להוסיף שם אישי"
                         style={{ width: '100%', minHeight: '160px', padding: '10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', resize: 'vertical', outline: 'none' }} />
                     </div>
                   ) : (
@@ -372,7 +367,7 @@ export default function PatientsPage() {
 
                 {/* צד ימין — רשימת מטופלים */}
                 <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>מטופלים לשליחה ({broadcastSelected.length})</div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {[{ key: 'inactive', label: 'לא פעיל' }, { key: 'active', label: 'פעיל' }, { key: 'all', label: 'הכל' }].map(f => (
@@ -381,19 +376,29 @@ export default function PatientsPage() {
                     </div>
                   </div>
 
+                  {/* שדה חיפוש */}
+                  <input
+                    placeholder="🔍 חפש מטופל לפי שם או טלפון..."
+                    value={broadcastSearch}
+                    onChange={e => setBroadcastSearch(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'Heebo, sans-serif', marginBottom: '10px', direction: 'rtl' }}
+                  />
+
                   <div style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                     {broadcastLoading ? (
                       <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>טוען...</div>
                     ) : (
-                      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        {broadcastPatients.map(p => (
+                      <div style={{ maxHeight: '260px', overflowY: 'auto' }}>
+                        {filteredBroadcastPatients.length === 0 ? (
+                          <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>לא נמצאו מטופלים</div>
+                        ) : filteredBroadcastPatients.map(p => (
                           <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderBottom: '1px solid #f8fafc', background: broadcastSelected.includes(p.id) ? '#f5f3ff' : '#fff' }}>
                             <input type="checkbox" checked={broadcastSelected.includes(p.id)} onChange={() => toggleBroadcast(p.id)} style={{ cursor: 'pointer' }} disabled={!p.phone} />
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: '13px', fontWeight: '600', color: p.phone ? '#1a3a5c' : '#94a3b8' }}>{p.first_name} {p.last_name}</div>
                               <div style={{ fontSize: '11px', color: '#94a3b8' }}>{p.phone || 'אין טלפון'}</div>
                             </div>
-                            {p.phone && broadcastSelected.includes(p.id) && (
+                            {p.phone && (
                               <button onClick={() => openWA(p)} style={{ padding: '4px 10px', background: '#25d366', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>שלח</button>
                             )}
                           </div>
@@ -404,16 +409,12 @@ export default function PatientsPage() {
 
                   <div style={{ marginTop: '16px' }}>
                     {sentCount > 0 && (
-                      <div style={{ marginBottom: '10px', fontSize: '12px', color: '#0b8a5e', fontWeight: '600', textAlign: 'center' }}>
-                        ✅ נשלחו {sentCount} הודעות
-                      </div>
+                      <div style={{ marginBottom: '10px', fontSize: '12px', color: '#0b8a5e', fontWeight: '600', textAlign: 'center' }}>✅ נשלחו {sentCount} הודעות</div>
                     )}
                     <button onClick={sendAll} disabled={broadcastSelected.length === 0} style={{ width: '100%', padding: '13px', background: broadcastSelected.length === 0 ? '#94a3b8' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', cursor: broadcastSelected.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif', boxShadow: broadcastSelected.length > 0 ? '0 4px 14px rgba(37,211,102,0.35)' : 'none' }}>
                       📲 שלח לכל הנבחרים ({broadcastSelected.length})
                     </button>
-                    <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '8px' }}>
-                      WhatsApp ייפתח בנפרד לכל מטופל
-                    </p>
+                    <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '8px' }}>WhatsApp ייפתח בנפרד לכל מטופל</p>
                   </div>
                 </div>
               </div>
