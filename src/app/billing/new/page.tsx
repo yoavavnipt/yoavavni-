@@ -31,7 +31,7 @@ function NewBillingPage() {
     amount: 0, description: '', status: 'paid', payment_method: 'מזומן', notes: '',
   })
 
-  useEffect(() => { supabase.from('patients').select('id,first_name,last_name,phone,email').eq('status','active').order('first_name').then(({data}) => setPatients(data||[])) }, [])
+  useEffect(() => { supabase.from('patients').select('id,first_name,last_name,phone,email').or('is_archived.is.null,is_archived.eq.false').order('first_name').then(({data}) => setPatients(data||[])) }, [])
   useEffect(() => {
     if (prePatient && patients.length > 0) {
       const p = patients.find(p => p.id === prePatient)
