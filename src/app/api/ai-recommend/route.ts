@@ -12,16 +12,21 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        model: 'claude-sonnet-4-5-20251101',
+        max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }],
       }),
     })
 
     const data = await response.json()
+
+    if (data.error) {
+      return NextResponse.json({ text: `שגיאה: ${data.error.message}` }, { status: 400 })
+    }
+
     const text = data.content?.[0]?.text || 'לא התקבלה תשובה'
     return NextResponse.json({ text })
-  } catch (err) {
-    return NextResponse.json({ text: 'שגיאה בשרת' }, { status: 500 })
+  } catch (err: any) {
+    return NextResponse.json({ text: `שגיאה: ${err.message}` }, { status: 500 })
   }
 }
