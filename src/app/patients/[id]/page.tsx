@@ -189,17 +189,13 @@ export default function PatientProfilePage() {
 6. **אזהרות / שיקולים מיוחדים** — דגלים אדומים או התאמות`
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/ai-recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        body: JSON.stringify({ prompt })
       })
       const data = await res.json()
-      setAiRec(data.content?.[0]?.text || 'לא הצלחנו לקבל המלצות')
+      setAiRec(data.text || 'לא הצלחנו לקבל המלצות')
     } catch {
       setAiRec('שגיאה בקבלת המלצות AI. נסה שוב.')
     }
