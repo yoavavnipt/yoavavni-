@@ -11,19 +11,21 @@ const ta = { ...{width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', b
 const lbl = { display:'block' as const, fontSize:'11px', fontWeight:'700' as const, color:'#64748b', marginBottom:'4px', textTransform:'uppercase' as const, letterSpacing:'0.04em' }
 const card = { background:'#fff', borderRadius:'12px', padding:'18px', marginBottom:'12px', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }
 
+const VAT = 0.18
+function withoutVAT(n: number) { return Math.round(n / (1 + VAT)) }
+function vatAmount(n: number) { return n - withoutVAT(n) }
+
 const FOOTER = `\n\nבברכה,\nקליניקת יואב אבני 🏥\n📍 רחוב התרשיש 8, גילון\n🌐 https://www.yoav-avni-clinic.com\n📸 https://www.instagram.com/yoavavni.pt`
 
 function waPhone(phone: string) { return `972${phone?.replace(/^0/, '').replace(/-/g, '')}` }
 function isLocal(city: string) { return city && (city.includes('גילון') || city.includes('צורית')) }
 
-// יצירת קישור ליומן Google
 function buildCalendarLink(appt: any, patient: any) {
   if (!appt?.date || !appt?.time) return ''
   const service = appt?.service?.name_he || 'פיזיותרפיה'
   const dateStr = appt.date.replace(/-/g, '')
   const timeStr = appt.time?.slice(0, 5).replace(':', '') || '0800'
   const startDateTime = `${dateStr}T${timeStr}00`
-  // חישוב סיום (45 דקות)
   const [h, m] = appt.time.slice(0, 5).split(':').map(Number)
   const endMin = m + 45
   const endH = h + Math.floor(endMin / 60)
@@ -58,7 +60,6 @@ function buildContractMsg(patient: any, nextAppt: any) {
   const local = isLocal(city)
   const calLink = buildCalendarLink(nextAppt, patient)
   const calText = calLink ? `\n\n📅 הוסף לגוגל קלנדר:\n${calLink}` : ''
-
   if (service.includes('מים') || service.includes('הידרו')) return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה במים בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה במים אורך 60 דקות.\nעלות ${price} ₪ לטיפול.\n\nנא להביא:\n🩱 בגד ים\n🏊 כובע ים (חובה)\n🧴 מגבת\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${calText}${FOOTER}`
   if (service.includes('בית')) return `בוקר טוב ${name} 😊\n\nקבענו ביקור בית בתאריך ${date} בשעה ${time}\nהטיפול אורך כ-60 דקות.\nעלות ${price} ₪ לטיפול.\n\nאנא הכינו מקום נוח ומרווח לטיפול.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${calText}${FOOTER}`
   if (service.includes('קבוצת ריצה') || service.includes('היברידי')) return `בוקר טוב ${name} 😊\n\nברוך הבא לחבילת ריצה! 🏃\n\nהמפגש הראשון בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ לחודש.\n\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${calText}${FOOTER}`
@@ -140,6 +141,7 @@ export default function PatientProfilePage() {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiRec, setAiRec] = useState('')
+  const [showVAT, setShowVAT] = useState(true)
 
   useEffect(() => { if (id) loadAll() }, [id])
 
@@ -184,32 +186,8 @@ export default function PatientProfilePage() {
   }
 
   async function getAiRecommendation() {
-    setAiLoading(true)
-    setAiRec('')
-    const prompt = `אתה פיזיותרפיסט מומחה. בהתבסס על הממצאים הבאים, תן המלצות קליניות מפורטות לתוכנית הטיפול.
-
-מטופל: ${patient?.first_name} ${patient?.last_name}
-אבחנה: ${patient?.diagnosis || intake?.doctor_diagnosis || 'לא צוינה'}
-אבחנה פיזיותרפיסט: ${intake?.pt_diagnosis || 'לא צוינה'}
-רקע רפואי: ${intake?.background || patient?.medical_history || 'לא צוין'}
-בעיות תפקודיות: ${intake?.functional_problems || 'לא צוינו'}
-תפקוד ADL: ${intake?.adl || 'לא צוין'}
-כוח שרירים: ${intake?.exam_strength || 'לא נבדק'}
-טווחי תנועה (ROM): ${intake?.exam_rom || 'לא נבדק'}
-טונוס: ${intake?.exam_tonus || 'לא נבדק'}
-תחושה: ${intake?.exam_sensation || 'לא נבדקה'}
-מטרות הטיפול: ${intake?.goals || 'לא הוגדרו'}
-תרופות: ${patient?.medications || 'לא'}
-אלרגיות: ${patient?.allergies || 'לא'}
-
-ספק המלצות קליניות מובנות בעברית הכוללות:
-1. **אבחנה פיזיותרפית מומלצת** — לפי הממצאים
-2. **יעדי טיפול מוצעים** — קצר וארוך טווח
-3. **שיטות טיפול מומלצות** — טכניקות ספציפיות
-4. **תרגילים מומלצים** — עם תיאור קצר
-5. **תדירות טיפול מומלצת** — כמה פגישות ובאיזו תדירות
-6. **אזהרות / שיקולים מיוחדים** — דגלים אדומים או התאמות`
-
+    setAiLoading(true); setAiRec('')
+    const prompt = `אתה פיזיותרפיסט מומחה. בהתבסס על הממצאים הבאים, תן המלצות קליניות מפורטות לתוכנית הטיפול.\n\nמטופל: ${patient?.first_name} ${patient?.last_name}\nאבחנה: ${patient?.diagnosis || intake?.doctor_diagnosis || 'לא צוינה'}\nאבחנה פיזיותרפיסט: ${intake?.pt_diagnosis || 'לא צוינה'}\nרקע רפואי: ${intake?.background || patient?.medical_history || 'לא צוין'}\nבעיות תפקודיות: ${intake?.functional_problems || 'לא צוינו'}\nתפקוד ADL: ${intake?.adl || 'לא צוין'}\nכוח שרירים: ${intake?.exam_strength || 'לא נבדק'}\nטווחי תנועה (ROM): ${intake?.exam_rom || 'לא נבדק'}\nטונוס: ${intake?.exam_tonus || 'לא נבדק'}\nתחושה: ${intake?.exam_sensation || 'לא נבדקה'}\nמטרות הטיפול: ${intake?.goals || 'לא הוגדרו'}\nתרופות: ${patient?.medications || 'לא'}\nאלרגיות: ${patient?.allergies || 'לא'}\n\nספק המלצות קליניות מובנות בעברית הכוללות:\n1. **אבחנה פיזיותרפית מומלצת**\n2. **יעדי טיפול מוצעים**\n3. **שיטות טיפול מומלצות**\n4. **תרגילים מומלצים**\n5. **תדירות טיפול מומלצת**\n6. **אזהרות / שיקולים מיוחדים**`
     try {
       const res = await fetch('/api/ai-recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       const data = await res.json()
@@ -224,31 +202,25 @@ export default function PatientProfilePage() {
     if (!goalForm.action || !goalForm.measure) { alert('יש למלא פעולה ומדד'); return }
     setGoalSaving(true)
     await supabase.from('treatment_goals').insert([{ ...goalForm, patient_id: id }])
-    setGoalSaving(false)
-    setShowGoalForm(false)
+    setGoalSaving(false); setShowGoalForm(false)
     setGoalForm({ action: '', measure: '', difficulty: 'ללא קושי', target_date: '', notes: '' })
     loadAll()
   }
 
   async function updateGoalStatus(goalId: string, status: string) {
-    await supabase.from('treatment_goals').update({ status }).eq('id', goalId)
-    loadAll()
+    await supabase.from('treatment_goals').update({ status }).eq('id', goalId); loadAll()
   }
 
   async function addGoalUpdate(goalId: string) {
-    const text = updateText[goalId]
-    if (!text) return
+    const text = updateText[goalId]; if (!text) return
     await supabase.from('goal_updates').insert([{ goal_id: goalId, note: text }])
-    setUpdateText(p => ({ ...p, [goalId]: '' }))
-    loadAll()
+    setUpdateText(p => ({ ...p, [goalId]: '' })); loadAll()
   }
 
   async function finishSeries() {
     setArchiving(true)
     await supabase.from('patients').update({ is_archived: true, status: 'inactive', series_end_date: new Date().toISOString().split('T')[0] }).eq('id', id)
-    setArchiving(false)
-    setShowArchiveConfirm(false)
-    router.push('/patients')
+    setArchiving(false); setShowArchiveConfirm(false); router.push('/patients')
   }
 
   const totalPaid = billing.filter(b => b.status === 'paid').reduce((s, b) => s + (b.amount || 0), 0)
@@ -257,16 +229,15 @@ export default function PatientProfilePage() {
   if (!patient) return <AppLayout><div style={{ padding:'40px', textAlign:'center', color:'#94a3b8' }}>מטופל לא נמצא</div></AppLayout>
 
   const tabs = [
-    { key: 'overview',     label: 'סקירה כללית' },
-    { key: 'intake',       label: '📋 ראיון קבלה' },
-    { key: 'goals',        label: `🎯 מטרות (${goals.length})` },
+    { key: 'overview', label: 'סקירה כללית' },
+    { key: 'intake', label: '📋 ראיון קבלה' },
+    { key: 'goals', label: `🎯 מטרות (${goals.length})` },
     { key: 'appointments', label: `תורים (${appointments.length})` },
-    { key: 'records',      label: `SOAP (${records.length})` },
-    { key: 'billing',      label: `חיוב (${billing.length})` },
+    { key: 'records', label: `SOAP (${records.length})` },
+    { key: 'billing', label: `חיוב (${billing.length})` },
   ]
 
   const fundingLabel = getFundingLabel(patient)
-
   const today = new Date().toISOString().split('T')[0]
   const nextAppt = appointments.find(a => a.date >= today && a.status !== 'cancelled')
   const lastAppt = appointments.find(a => a.date <= today && a.status === 'completed')
@@ -310,9 +281,7 @@ export default function PatientProfilePage() {
               <>
                 {nextAppt && <button onClick={() => openWA(patient.phone, buildContractMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#1e4a7a', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>📋 חוזה טיפולי</button>}
                 {nextAppt && <button onClick={() => openWA(patient.phone, buildReminderMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#7c3aed', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>⏰ תזכורת לתור</button>}
-                {nextAppt && (
-                  <a href={buildCalendarLink(nextAppt, patient)} target="_blank" rel="noreferrer" style={{ padding:'8px 12px', background:'#4285F4', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700', textDecoration:'none' }}>📅 הוסף ליומן</a>
-                )}
+                {nextAppt && <a href={buildCalendarLink(nextAppt, patient)} target="_blank" rel="noreferrer" style={{ padding:'8px 12px', background:'#4285F4', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700', textDecoration:'none' }}>📅 הוסף ליומן</a>}
                 <button onClick={() => openWA(patient.phone, buildPaymentMsg(patient, lastAppt || nextAppt))} style={{ padding:'8px 12px', background:'#0b8a5e', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>💳 תזכורת תשלום</button>
                 <Link href={`/whatsapp?patient=${id}`} style={{ padding:'8px 12px', background:'#25d366', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700' }}>💬 כל ההודעות</Link>
                 <button onClick={() => { const phone = patient.phone?.replace(/^0/,'').replace(/-/g,''); const msg = encodeURIComponent(`שלום ${patient.first_name} ${patient.last_name} 😊\n\nיצרנו עבורך גישה אישית לפורטל הקליניקה!\n\n🔗 לכניסה:\nhttps://yoavavni-9dy3.vercel.app/portal\n\nהיכנס עם מספר הטלפון שלך: ${patient.phone}\n\nבפורטל תוכל:\n📅 לקבוע תורים בעצמך\n📋 לראות את התורים הקרובים שלך\n\nקליניקת יואב אבני`); window.open(`https://wa.me/972${phone}?text=${msg}`, '_blank') }} style={{ padding:'8px 12px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>🔗 הזמן לפורטל</button>
@@ -327,17 +296,29 @@ export default function PatientProfilePage() {
 
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'14px' }}>
-          {[
-            { label:'סה"כ תורים', value:appointments.length, icon:'📅', color:'#3eb8e5' },
-            { label:'טיפולים SOAP', value:records.length, icon:'📋', color:'#7c3aed' },
-            { label:'שולם סה"כ', value:`₪${totalPaid.toLocaleString()}`, icon:'💰', color:'#0b8a5e' },
-          ].map(s => (
-            <div key={s.label} style={{ background:'#fff', borderRadius:'10px', padding:'14px', borderRight:`3px solid ${s.color}`, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
-              <div style={{ fontSize:'20px', marginBottom:'6px' }}>{s.icon}</div>
-              <div style={{ fontSize:'20px', fontWeight:'800' }}>{s.value}</div>
-              <div style={{ fontSize:'11px', color:'#64748b', marginTop:'2px' }}>{s.label}</div>
+          <div style={{ background:'#fff', borderRadius:'10px', padding:'14px', borderRight:'3px solid #3eb8e5', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize:'20px', marginBottom:'6px' }}>📅</div>
+            <div style={{ fontSize:'20px', fontWeight:'800' }}>{appointments.length}</div>
+            <div style={{ fontSize:'11px', color:'#64748b', marginTop:'2px' }}>סה"כ תורים</div>
+          </div>
+          <div style={{ background:'#fff', borderRadius:'10px', padding:'14px', borderRight:'3px solid #7c3aed', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize:'20px', marginBottom:'6px' }}>📋</div>
+            <div style={{ fontSize:'20px', fontWeight:'800' }}>{records.length}</div>
+            <div style={{ fontSize:'11px', color:'#64748b', marginTop:'2px' }}>טיפולים SOAP</div>
+          </div>
+          <div style={{ background:'#fff', borderRadius:'10px', padding:'14px', borderRight:'3px solid #0b8a5e', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize:'20px', marginBottom:'6px' }}>💰</div>
+            <div style={{ fontSize:'20px', fontWeight:'800' }}>₪{(showVAT ? totalPaid : withoutVAT(totalPaid)).toLocaleString()}</div>
+            <div style={{ fontSize:'11px', color:'#64748b', marginTop:'2px' }}>שולם סה"כ</div>
+            <div style={{ fontSize:'10px', color:'#94a3b8', marginTop:'2px' }}>
+              {showVAT ? `ללא מע"מ: ₪${withoutVAT(totalPaid).toLocaleString()}` : `כולל מע"מ: ₪${totalPaid.toLocaleString()}`}
             </div>
-          ))}
+            {/* טוגל מע"מ */}
+            <div style={{ display:'flex', gap:'4px', marginTop:'6px' }}>
+              <button onClick={() => setShowVAT(true)} style={{ padding:'2px 6px', border:'none', borderRadius:'4px', fontSize:'9px', fontWeight: showVAT ? '700' : '400', background: showVAT ? '#0b8a5e' : '#f1f5f9', color: showVAT ? '#fff' : '#64748b', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>כולל מע"מ</button>
+              <button onClick={() => setShowVAT(false)} style={{ padding:'2px 6px', border:'none', borderRadius:'4px', fontSize:'9px', fontWeight: !showVAT ? '700' : '400', background: !showVAT ? '#0b8a5e' : '#f1f5f9', color: !showVAT ? '#fff' : '#64748b', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>ללא מע"מ</button>
+            </div>
+          </div>
         </div>
 
         {/* VAS Chart */}
@@ -608,14 +589,25 @@ export default function PatientProfilePage() {
         {tab === 'billing' && (
           <div style={{background:'#fff',borderRadius:'12px',boxShadow:'0 1px 4px rgba(0,0,0,0.06)',overflow:'hidden'}}>
             <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <div><div style={{fontWeight:'700',fontSize:'14px'}}>חיובים</div><div style={{fontSize:'11px',color:'#0b8a5e',marginTop:'2px'}}>סה"כ שולם: ₪{totalPaid.toLocaleString()}</div></div>
+              <div>
+                <div style={{fontWeight:'700',fontSize:'14px'}}>חיובים</div>
+                <div style={{fontSize:'11px',color:'#0b8a5e',marginTop:'2px'}}>
+                  סה"כ שולם: ₪{(showVAT ? totalPaid : withoutVAT(totalPaid)).toLocaleString()}
+                  <span style={{color:'#94a3b8',marginRight:'6px'}}>
+                    ({showVAT ? `ללא מע"מ: ₪${withoutVAT(totalPaid).toLocaleString()}` : `כולל מע"מ: ₪${totalPaid.toLocaleString()}`})
+                  </span>
+                </div>
+              </div>
               <Link href={`/billing/new?patient=${id}`} style={{padding:'6px 12px',background:'#0b8a5e',color:'#fff',borderRadius:'6px',fontSize:'12px',fontWeight:'600'}}>+ חיוב חדש</Link>
             </div>
             {billing.length===0?(<div style={{padding:'40px',textAlign:'center',color:'#94a3b8'}}>אין חיובים</div>):billing.map((b,i)=>(
               <div key={b.id} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 18px',borderBottom:i<billing.length-1?'1px solid #f8fafc':'none'}}>
                 <div style={{fontWeight:'600',fontSize:'13px',minWidth:'90px'}}>{new Date(b.created_at).toLocaleDateString('he-IL')}</div>
                 <div style={{flex:1,fontSize:'13px',color:'#64748b'}}>{b.description||'טיפול'}</div>
-                <div style={{fontSize:'14px',fontWeight:'700',color:'#1a3a5c'}}>₪{(b.amount||0).toLocaleString()}</div>
+                <div style={{textAlign:'left'}}>
+                  <div style={{fontSize:'14px',fontWeight:'700',color:'#1a3a5c'}}>₪{(showVAT ? b.amount : withoutVAT(b.amount||0)).toLocaleString()}</div>
+                  <div style={{fontSize:'10px',color:'#94a3b8'}}>{showVAT ? `ללא מע"מ: ₪${withoutVAT(b.amount||0).toLocaleString()}` : `כולל מע"מ: ₪${(b.amount||0).toLocaleString()}`}</div>
+                </div>
                 <span style={{padding:'3px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:'600',background:b.status==='paid'?'#d1fae5':b.status==='pending'?'#fef3c7':'#fee2e2',color:b.status==='paid'?'#065f46':b.status==='pending'?'#92400e':'#991b1b'}}>{b.status==='paid'?'שולם':b.status==='pending'?'ממתין':'בוטל'}</span>
               </div>
             ))}

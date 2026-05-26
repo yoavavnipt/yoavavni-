@@ -7,6 +7,10 @@ import Link from 'next/link'
 const inp = { width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'13px', outline:'none', fontFamily:'Heebo, sans-serif', background:'#fff' } as const
 const lbl = { display:'block' as const, fontSize:'11px', fontWeight:'700' as const, color:'#64748b', marginBottom:'4px', textTransform:'uppercase' as const }
 
+const VAT = 0.18
+function withoutVAT(n: number) { return Math.round(n / (1 + VAT)) }
+function vatAmount(n: number) { return n - withoutVAT(n) }
+
 export default function OrganizationsPage() {
   const [orgs, setOrgs] = useState<any[]>([])
   const [selected, setSelected] = useState<any>(null)
@@ -18,6 +22,7 @@ export default function OrganizationsPage() {
   const [allPatients, setAllPatients] = useState<any[]>([])
   const [patientSearch, setPatientSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showVAT, setShowVAT] = useState(true)
   const [form, setForm] = useState({ name: '', type: 'sport', payment_type: 'full', monthly_cap: '', contact_name: '', contact_phone: '', contact_email: '', notes: '' })
 
   useEffect(() => { loadOrgs() }, [])
@@ -43,16 +48,14 @@ export default function OrganizationsPage() {
     if (!form.name) { alert('יש להזין שם ארגון'); return }
     setSaving(true)
     await supabase.from('organizations').insert([{ ...form, monthly_cap: Number(form.monthly_cap) || 0 }])
-    setSaving(false)
-    setShowForm(false)
+    setSaving(false); setShowForm(false)
     setForm({ name: '', type: 'sport', payment_type: 'full', monthly_cap: '', contact_name: '', contact_phone: '', contact_email: '', notes: '' })
     loadOrgs()
   }
 
   async function linkAthlete(patientId: string) {
     await supabase.from('patients').update({ organization_id: selected.id }).eq('id', patientId)
-    setShowAddAthlete(false)
-    selectOrg(selected)
+    setShowAddAthlete(false); selectOrg(selected)
   }
 
   async function unlinkAthlete(patientId: string) {
@@ -68,23 +71,31 @@ export default function OrganizationsPage() {
 
   const totalPaid = billing.filter(b => b.status === 'paid').reduce((s, b) => s + (b.amount || 0), 0)
   const totalPending = billing.filter(b => b.status === 'pending').reduce((s, b) => s + (b.amount || 0), 0)
-
   const filteredPatients = allPatients.filter(p => `${p.first_name} ${p.last_name}`.includes(patientSearch))
+
+  function displayAmount(n: number) { return showVAT ? n : withoutVAT(n) }
 
   return (
     <AppLayout>
       <div style={{ padding: '20px 24px' }} className="fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>🏆 ארגונים וקבוצות</h1>
+          <div>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>🏆 ארגונים וקבוצות</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>הצג מחירים:</span>
+              <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                <button onClick={() => setShowVAT(true)} style={{ padding: '4px 10px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: showVAT ? '700' : '400', background: showVAT ? '#1a3a5c' : 'transparent', color: showVAT ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>כולל מע"מ</button>
+                <button onClick={() => setShowVAT(false)} style={{ padding: '4px 10px', border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: !showVAT ? '700' : '400', background: !showVAT ? '#1a3a5c' : 'transparent', color: !showVAT ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>ללא מע"מ</button>
+              </div>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>מע"מ 18%</span>
+            </div>
+          </div>
           <button onClick={() => setShowForm(true)} style={{ padding: '9px 18px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>+ ארגון חדש</button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '16px' }}>
-          {/* רשימת ארגונים */}
           <div>
-            {loading ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>טוען...</div>
-            ) : orgs.map(org => (
+            {loading ? <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>טוען...</div> : orgs.map(org => (
               <div key={org.id} onClick={() => selectOrg(org)} style={{ background: selected?.id === org.id ? '#1a3a5c' : '#fff', color: selected?.id === org.id ? '#fff' : '#1a3a5c', borderRadius: '10px', padding: '14px 16px', marginBottom: '8px', cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', transition: 'all 0.15s' }}>
                 <div style={{ fontWeight: '700', fontSize: '13px' }}>{org.name}</div>
                 <div style={{ fontSize: '11px', color: selected?.id === org.id ? 'rgba(255,255,255,0.6)' : '#94a3b8', marginTop: '3px' }}>
@@ -94,10 +105,8 @@ export default function OrganizationsPage() {
             ))}
           </div>
 
-          {/* פרטי ארגון */}
           {selected ? (
             <div>
-              {/* Header */}
               <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', borderRadius: '14px', padding: '20px', marginBottom: '16px', color: '#fff' }}>
                 <div style={{ fontSize: '20px', fontWeight: '800', marginBottom: '4px' }}>🏆 {selected.name}</div>
                 <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
@@ -110,17 +119,16 @@ export default function OrganizationsPage() {
                     <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>ספורטאים</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#3eb8e5' }}>₪{totalPaid.toLocaleString()}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>שולם</div>
+                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#3eb8e5' }}>₪{displayAmount(totalPaid).toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>שולם ({showVAT ? `ללא מע"מ: ₪${withoutVAT(totalPaid).toLocaleString()}` : `כולל: ₪${totalPaid.toLocaleString()}`})</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#fbbf24' }}>₪{totalPending.toLocaleString()}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>ממתין</div>
+                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#fbbf24' }}>₪{displayAmount(totalPending).toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>ממתין ({showVAT ? `ללא מע"מ: ₪${withoutVAT(totalPending).toLocaleString()}` : `כולל: ₪${totalPending.toLocaleString()}`})</div>
                   </div>
                 </div>
               </div>
 
-              {/* ספורטאים */}
               <div style={{ background: '#fff', borderRadius: '12px', marginBottom: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: '700', fontSize: '13px' }}>👥 ספורטאים ({athletes.length})</div>
@@ -143,7 +151,6 @@ export default function OrganizationsPage() {
                 ))}
               </div>
 
-              {/* חיובים */}
               <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: '700', fontSize: '13px' }}>💰 חיובים לארגון</div>
@@ -157,20 +164,20 @@ export default function OrganizationsPage() {
                       <div style={{ fontSize: '13px', fontWeight: '600' }}>{b.description || 'טיפול'}</div>
                       <div style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(b.created_at).toLocaleDateString('he-IL')} · {b.patient?.first_name} {b.patient?.last_name}</div>
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a3a5c' }}>₪{(b.amount || 0).toLocaleString()}</div>
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a3a5c' }}>₪{displayAmount(b.amount || 0).toLocaleString()}</div>
+                      <div style={{ fontSize: '10px', color: '#94a3b8' }}>{showVAT ? `ללא מע"מ: ₪${withoutVAT(b.amount||0).toLocaleString()}` : `כולל מע"מ: ₪${(b.amount||0).toLocaleString()}`}</div>
+                    </div>
                     <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: b.status === 'paid' ? '#d1fae5' : '#fef3c7', color: b.status === 'paid' ? '#065f46' : '#92400e' }}>{b.status === 'paid' ? 'שולם' : 'ממתין'}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#94a3b8', fontSize: '14px' }}>
-              בחר ארגון מהרשימה
-            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#94a3b8', fontSize: '14px' }}>בחר ארגון מהרשימה</div>
           )}
         </div>
 
-        {/* Modal — ארגון חדש */}
         {showForm && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowForm(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '500px', direction: 'rtl' }}>
@@ -178,26 +185,10 @@ export default function OrganizationsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div><label style={lbl}>שם הארגון *</label><input style={inp} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="מכבי עירוני רמת גן..."/></div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={lbl}>סוג</label>
-                    <select style={inp} value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                      <option value="sport">קבוצת ספורט</option>
-                      <option value="association">עמותה</option>
-                      <option value="company">חברה</option>
-                      <option value="other">אחר</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={lbl}>סוג תשלום</label>
-                    <select style={inp} value={form.payment_type} onChange={e => setForm(p => ({ ...p, payment_type: e.target.value }))}>
-                      <option value="full">מלא</option>
-                      <option value="partial">חלקי</option>
-                    </select>
-                  </div>
+                  <div><label style={lbl}>סוג</label><select style={inp} value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}><option value="sport">קבוצת ספורט</option><option value="association">עמותה</option><option value="company">חברה</option><option value="other">אחר</option></select></div>
+                  <div><label style={lbl}>סוג תשלום</label><select style={inp} value={form.payment_type} onChange={e => setForm(p => ({ ...p, payment_type: e.target.value }))}><option value="full">מלא</option><option value="partial">חלקי</option></select></div>
                 </div>
-                {form.payment_type === 'partial' && (
-                  <div><label style={lbl}>תקרה חודשית לספורטאי ₪</label><input type="number" style={inp} value={form.monthly_cap} onChange={e => setForm(p => ({ ...p, monthly_cap: e.target.value }))} placeholder="1500"/></div>
-                )}
+                {form.payment_type === 'partial' && <div><label style={lbl}>תקרה חודשית לספורטאי ₪</label><input type="number" style={inp} value={form.monthly_cap} onChange={e => setForm(p => ({ ...p, monthly_cap: e.target.value }))} placeholder="1500"/></div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div><label style={lbl}>איש קשר</label><input style={inp} value={form.contact_name} onChange={e => setForm(p => ({ ...p, contact_name: e.target.value }))}/></div>
                   <div><label style={lbl}>טלפון</label><input style={inp} value={form.contact_phone} onChange={e => setForm(p => ({ ...p, contact_phone: e.target.value }))}/></div>
@@ -213,7 +204,6 @@ export default function OrganizationsPage() {
           </div>
         )}
 
-        {/* Modal — הוספת ספורטאי */}
         {showAddAthlete && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowAddAthlete(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', direction: 'rtl' }}>
