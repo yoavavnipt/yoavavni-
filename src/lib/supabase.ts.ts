@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
 
+// Client-side Supabase (משתמש ב-Anon Key — בטוח עם RLS מופעל)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Server-side Supabase (משתמש ב-Secret Key — רק בתוך API routes)
+export function createServiceClient() {
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || supabaseAnonKey
+  return createClient(supabaseUrl, serviceKey)
+}
 
 export const CLINIC = {
   name: 'קליניקת יואב אבני',
