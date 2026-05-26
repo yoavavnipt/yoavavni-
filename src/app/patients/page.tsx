@@ -73,6 +73,8 @@ export default function PatientsPage() {
       q = q.or('is_archived.is.null,is_archived.eq.false')
       if (filter !== 'all') q = q.eq('status', filter)
     }
+    // הסתר ארגונים מרשימת המטופלים
+    q = q.or('is_organization.is.null,is_organization.eq.false')
     if (search) q = q.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,phone.ilike.%${search}%,id_number.ilike.%${search}%`)
     if (currentUser?.role === 'therapist') {
       const { data: myAppts } = await supabase.from('appointments').select('patient_id').eq('notes', currentUser.name).or(`notes.ilike.%${currentUser.name}%`)
@@ -93,28 +95,20 @@ export default function PatientsPage() {
 
   async function loadBroadcastPatients() {
     setBroadcastLoading(true)
-    let q = supabase.from('patients').select('id,first_name,last_name,phone,status,diagnosis').or('is_archived.is.null,is_archived.eq.false').order('first_name')
+    let q = supabase.from('patients').select('id,first_name,last_name,phone,status,diagnosis').or('is_archived.is.null,is_archived.eq.false').or('is_organization.is.null,is_organization.eq.false').order('first_name')
     if (broadcastFilter !== 'all') q = q.eq('status', broadcastFilter)
     const { data } = await q
     setBroadcastPatients(data || [])
-    // ברירת מחדל — ללא סימון
     setBroadcastSelected([])
     setBroadcastLoading(false)
   }
 
   const filteredBroadcastPatients = broadcastPatients.filter(p =>
-    broadcastSearch === '' ||
-    `${p.first_name} ${p.last_name}`.includes(broadcastSearch) ||
-    p.phone?.includes(broadcastSearch)
+    broadcastSearch === '' || `${p.first_name} ${p.last_name}`.includes(broadcastSearch) || p.phone?.includes(broadcastSearch)
   )
 
-  function selectAllBroadcast() {
-    setBroadcastSelected(filteredBroadcastPatients.filter(p => p.phone).map(p => p.id))
-  }
-
-  function clearAllBroadcast() {
-    setBroadcastSelected([])
-  }
+  function selectAllBroadcast() { setBroadcastSelected(filteredBroadcastPatients.filter(p => p.phone).map(p => p.id)) }
+  function clearAllBroadcast() { setBroadcastSelected([]) }
 
   function getMessageForPatient(patient: any) {
     const template = MESSAGE_TEMPLATES.find(t => t.id === selectedTemplate)
@@ -131,9 +125,7 @@ export default function PatientsPage() {
   function sendAll() {
     const toSend = broadcastPatients.filter(p => broadcastSelected.includes(p.id) && p.phone)
     setSentCount(0)
-    toSend.forEach((p, i) => {
-      setTimeout(() => { openWA(p); setSentCount(c => c + 1) }, i * 1500)
-    })
+    toSend.forEach((p, i) => { setTimeout(() => { openWA(p); setSentCount(c => c + 1) }, i * 1500) })
   }
 
   function openFunderPanel(p: any) {
@@ -194,9 +186,7 @@ export default function PatientsPage() {
               📢 רשימת תפוצה
             </button>
             {tab === 'patients' && (
-              <Link href="/patients/new" style={{ padding: '9px 18px', background: '#1a3a5c', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '700' }}>
-                + מטופל חדש
-              </Link>
+              <Link href="/patients/new" style={{ padding: '9px 18px', background: '#1a3a5c', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: '700' }}>+ מטופל חדש</Link>
             )}
           </div>
         </div>
@@ -332,15 +322,11 @@ export default function PatientsPage() {
         {showBroadcast && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }} onClick={() => setShowBroadcast(false)}>
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', direction: 'rtl' }}>
-
               <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><div style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c' }}>📢 רשימת תפוצה</div><div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>שליחת הודעות WhatsApp לקבוצת מטופלים</div></div>
                 <button onClick={() => setShowBroadcast(false)} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
-
-                {/* צד שמאל — תבנית */}
                 <div style={{ padding: '20px', borderLeft: '1px solid #f1f5f9', overflowY: 'auto' }}>
                   <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '10px' }}>בחר תבנית הודעה</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -353,8 +339,7 @@ export default function PatientsPage() {
                   {selectedTemplate === 'custom' ? (
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>תוכן ההודעה</div>
-                      <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} placeholder="כתוב כאן... השתמש ב-{שם} להוסיף שם אישי"
-                        style={{ width: '100%', minHeight: '160px', padding: '10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', resize: 'vertical', outline: 'none' }} />
+                      <textarea value={customMessage} onChange={e => setCustomMessage(e.target.value)} placeholder="כתוב כאן... השתמש ב-{שם} להוסיף שם אישי" style={{ width: '100%', minHeight: '160px', padding: '10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', resize: 'vertical', outline: 'none' }} />
                     </div>
                   ) : (
                     <div>
@@ -365,8 +350,6 @@ export default function PatientsPage() {
                     </div>
                   )}
                 </div>
-
-                {/* צד ימין — מטופלים */}
                 <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>נבחרו: {broadcastSelected.length}</div>
@@ -376,19 +359,11 @@ export default function PatientsPage() {
                       ))}
                     </div>
                   </div>
-
-                  {/* כפתורי סמן/בטל הכל + חיפוש */}
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                    <input
-                      placeholder="🔍 חפש שם או טלפון..."
-                      value={broadcastSearch}
-                      onChange={e => setBroadcastSearch(e.target.value)}
-                      style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'Heebo, sans-serif', direction: 'rtl' }}
-                    />
+                    <input placeholder="🔍 חפש שם או טלפון..." value={broadcastSearch} onChange={e => setBroadcastSearch(e.target.value)} style={{ flex: 1, padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', fontFamily: 'Heebo, sans-serif', direction: 'rtl' }} />
                     <button onClick={selectAllBroadcast} style={{ padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', color: '#1a3a5c', whiteSpace: 'nowrap' }}>סמן הכל</button>
                     <button onClick={clearAllBroadcast} style={{ padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', color: '#dc2626', whiteSpace: 'nowrap' }}>בטל הכל</button>
                   </div>
-
                   <div style={{ flex: 1, border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
                     {broadcastLoading ? (
                       <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>טוען...</div>
@@ -403,20 +378,15 @@ export default function PatientsPage() {
                               <div style={{ fontSize: '13px', fontWeight: '600', color: p.phone ? '#1a3a5c' : '#94a3b8' }}>{p.first_name} {p.last_name}</div>
                               <div style={{ fontSize: '11px', color: '#94a3b8' }}>{p.phone || 'אין טלפון'}</div>
                             </div>
-                            {p.phone && (
-                              <button onClick={() => openWA(p)} style={{ padding: '4px 10px', background: '#25d366', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>שלח</button>
-                            )}
+                            {p.phone && <button onClick={() => openWA(p)} style={{ padding: '4px 10px', background: '#25d366', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>שלח</button>}
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
-
                   <div style={{ marginTop: '16px' }}>
-                    {sentCount > 0 && (
-                      <div style={{ marginBottom: '10px', fontSize: '12px', color: '#0b8a5e', fontWeight: '600', textAlign: 'center' }}>✅ נשלחו {sentCount} הודעות</div>
-                    )}
-                    <button onClick={sendAll} disabled={broadcastSelected.length === 0} style={{ width: '100%', padding: '13px', background: broadcastSelected.length === 0 ? '#94a3b8' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', cursor: broadcastSelected.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif', boxShadow: broadcastSelected.length > 0 ? '0 4px 14px rgba(37,211,102,0.35)' : 'none' }}>
+                    {sentCount > 0 && <div style={{ marginBottom: '10px', fontSize: '12px', color: '#0b8a5e', fontWeight: '600', textAlign: 'center' }}>✅ נשלחו {sentCount} הודעות</div>}
+                    <button onClick={sendAll} disabled={broadcastSelected.length === 0} style={{ width: '100%', padding: '13px', background: broadcastSelected.length === 0 ? '#94a3b8' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', cursor: broadcastSelected.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
                       📲 שלח לנבחרים ({broadcastSelected.length})
                     </button>
                     <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '8px' }}>WhatsApp ייפתח בנפרד לכל מטופל</p>
@@ -426,7 +396,6 @@ export default function PatientsPage() {
             </div>
           </div>
         )}
-
       </div>
     </AppLayout>
   )
@@ -439,9 +408,5 @@ function StatusBadge({ status }: { status: string }) {
     inactive: { label: 'לא פעיל', bg: '#f1f5f9', color: '#475569' },
   }
   const s = map[status] || { label: status, bg: '#f1f5f9', color: '#475569' }
-  return (
-    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: s.bg, color: s.color }}>
-      {s.label}
-    </span>
-  )
+  return <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', background: s.bg, color: s.color }}>{s.label}</span>
 }
