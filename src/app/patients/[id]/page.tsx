@@ -16,6 +16,25 @@ const FOOTER = `\n\nבברכה,\nקליניקת יואב אבני 🏥\n📍 ר�
 function waPhone(phone: string) { return `972${phone?.replace(/^0/, '').replace(/-/g, '')}` }
 function isLocal(city: string) { return city && (city.includes('גילון') || city.includes('צורית')) }
 
+// יצירת קישור ליומן Google
+function buildCalendarLink(appt: any, patient: any) {
+  if (!appt?.date || !appt?.time) return ''
+  const service = appt?.service?.name_he || 'פיזיותרפיה'
+  const dateStr = appt.date.replace(/-/g, '')
+  const timeStr = appt.time?.slice(0, 5).replace(':', '') || '0800'
+  const startDateTime = `${dateStr}T${timeStr}00`
+  // חישוב סיום (45 דקות)
+  const [h, m] = appt.time.slice(0, 5).split(':').map(Number)
+  const endMin = m + 45
+  const endH = h + Math.floor(endMin / 60)
+  const endTime = `${String(endH).padStart(2, '0')}${String(endMin % 60).padStart(2, '0')}00`
+  const endDateTime = `${dateStr}T${endTime}`
+  const title = encodeURIComponent(`${service} - קליניקת יואב אבני`)
+  const location = encodeURIComponent('תרשיש 8, גילון')
+  const details = encodeURIComponent(`טיפול פיזיותרפיה עם יואב אבני\nלביטול: 054-5953889`)
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateTime}/${endDateTime}&location=${location}&details=${details}`
+}
+
 function getServicePrice(serviceName: string, city: string) {
   if (!serviceName) return 360
   if (serviceName.includes('פיזיו') && isLocal(city)) return 330
@@ -37,18 +56,23 @@ function buildContractMsg(patient: any, nextAppt: any) {
   const city = patient.city || ''
   const price = getServicePrice(service, city)
   const local = isLocal(city)
-  if (service.includes('מים') || service.includes('הידרו')) return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה במים בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה במים אורך 60 דקות.\nעלות ${price} ₪ לטיפול.\n\nנא להביא:\n🩱 בגד ים\n🏊 כובע ים (חובה)\n🧴 מגבת\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${FOOTER}`
-  if (service.includes('בית')) return `בוקר טוב ${name} 😊\n\nקבענו ביקור בית בתאריך ${date} בשעה ${time}\nהטיפול אורך כ-60 דקות.\nעלות ${price} ₪ לטיפול.\n\nאנא הכינו מקום נוח ומרווח לטיפול.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${FOOTER}`
-  if (service.includes('קבוצת ריצה') || service.includes('היברידי')) return `בוקר טוב ${name} 😊\n\nברוך הבא לחבילת ריצה! 🏃\n\nהמפגש הראשון בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ לחודש.\n\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${FOOTER}`
-  if (service.includes('קבוצתי')) return `בוקר טוב ${name} 😊\n\nקבענו טיפול שיקום קבוצתי בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ למתאמן.\n\nנא להגיע עם בגדים נוחים.\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${FOOTER}`
-  return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה אורך 45-50 דקות.\nעלות ${price} ₪ לטיפול${local ? ' לתושבי גילון וצורית' : ''}.\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.\nנא להגיע עם בגדים נוחים.${FOOTER}`
+  const calLink = buildCalendarLink(nextAppt, patient)
+  const calText = calLink ? `\n\n📅 הוסף לגוגל קלנדר:\n${calLink}` : ''
+
+  if (service.includes('מים') || service.includes('הידרו')) return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה במים בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה במים אורך 60 דקות.\nעלות ${price} ₪ לטיפול.\n\nנא להביא:\n🩱 בגד ים\n🏊 כובע ים (חובה)\n🧴 מגבת\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${calText}${FOOTER}`
+  if (service.includes('בית')) return `בוקר טוב ${name} 😊\n\nקבענו ביקור בית בתאריך ${date} בשעה ${time}\nהטיפול אורך כ-60 דקות.\nעלות ${price} ₪ לטיפול.\n\nאנא הכינו מקום נוח ומרווח לטיפול.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.${calText}${FOOTER}`
+  if (service.includes('קבוצת ריצה') || service.includes('היברידי')) return `בוקר טוב ${name} 😊\n\nברוך הבא לחבילת ריצה! 🏃\n\nהמפגש הראשון בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ לחודש.\n\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${calText}${FOOTER}`
+  if (service.includes('קבוצתי')) return `בוקר טוב ${name} 😊\n\nקבענו טיפול שיקום קבוצתי בתאריך ${date} בשעה ${time}\nעלות ${price} ₪ למתאמן.\n\nנא להגיע עם בגדים נוחים.\nביטול או שינוי יתבצע עד יום לפני ב-10:00.${calText}${FOOTER}`
+  return `בוקר טוב ${name} 😊\n\nקבענו טיפול פיזיותרפיה בתאריך ${date} בשעה ${time}\nטיפול פיזיותרפיה אורך 45-50 דקות.\nעלות ${price} ₪ לטיפול${local ? ' לתושבי גילון וצורית' : ''}.\n\nנא להביא מכתב רופא או כל אינפורמציה רפואית רלוונטית.\nביטול או שינוי יתבצע עד יום לפני ב-10:00 — מעבר לכך ידרש חיוב מלא.\nנא להגיע עם בגדים נוחים.${calText}${FOOTER}`
 }
 
 function buildReminderMsg(patient: any, nextAppt: any) {
   const name = `${patient.first_name} ${patient.last_name}`
   const date = nextAppt ? new Date(nextAppt.date).toLocaleDateString('he-IL') : '___'
   const time = nextAppt?.time?.slice(0, 5) || '___'
-  return `שלום ${name} 😊\n\nתזכורת — יש לך תור מחר ${date} בשעה ${time}.\n\n📍 רחוב התרשיש 8, גילון\nלשינוי או ביטול — עד הערב ב-10:00.\n\nמחכים לך! 🙏\nקליניקת יואב אבני`
+  const calLink = buildCalendarLink(nextAppt, patient)
+  const calText = calLink ? `\n\n📅 הוסף לגוגל קלנדר:\n${calLink}` : ''
+  return `שלום ${name} 😊\n\nתזכורת — יש לך תור מחר ${date} בשעה ${time}.\n\n📍 רחוב התרשיש 8, גילון\nלשינוי או ביטול — עד הערב ב-10:00.${calText}\n\nמחכים לך! 🙏\nקליניקת יואב אבני`
 }
 
 function buildPaymentMsg(patient: any, lastAppt: any) {
@@ -114,8 +138,6 @@ export default function PatientProfilePage() {
   const [goalUpdates, setGoalUpdates] = useState<Record<string,any[]>>({})
   const [archiving, setArchiving] = useState(false)
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false)
-
-  // AI המלצות
   const [aiLoading, setAiLoading] = useState(false)
   const [aiRec, setAiRec] = useState('')
 
@@ -189,16 +211,10 @@ export default function PatientProfilePage() {
 6. **אזהרות / שיקולים מיוחדים** — דגלים אדומים או התאמות`
 
     try {
-      const res = await fetch('/api/ai-recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
-      })
+      const res = await fetch('/api/ai-recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
       const data = await res.json()
       setAiRec(data.text || 'לא הצלחנו לקבל המלצות')
-    } catch {
-      setAiRec('שגיאה בקבלת המלצות AI. נסה שוב.')
-    }
+    } catch { setAiRec('שגיאה בקבלת המלצות AI. נסה שוב.') }
     setAiLoading(false)
   }
 
@@ -251,6 +267,10 @@ export default function PatientProfilePage() {
 
   const fundingLabel = getFundingLabel(patient)
 
+  const today = new Date().toISOString().split('T')[0]
+  const nextAppt = appointments.find(a => a.date >= today && a.status !== 'cancelled')
+  const lastAppt = appointments.find(a => a.date <= today && a.status === 'completed')
+
   return (
     <AppLayout>
       <div style={{ padding:'20px 24px' }} className="fade-in">
@@ -286,20 +306,18 @@ export default function PatientProfilePage() {
             </div>
           </div>
           <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
-            {patient.phone && (() => {
-              const today = new Date().toISOString().split('T')[0]
-              const nextAppt = appointments.find(a => a.date >= today && a.status !== 'cancelled')
-              const lastAppt = appointments.find(a => a.date <= today && a.status === 'completed')
-              return (
-                <>
-                  {nextAppt && <button onClick={() => openWA(patient.phone, buildContractMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#1e4a7a', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>📋 חוזה טיפולי</button>}
-                  {nextAppt && <button onClick={() => openWA(patient.phone, buildReminderMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#7c3aed', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>⏰ תזכורת לתור</button>}
-                  <button onClick={() => openWA(patient.phone, buildPaymentMsg(patient, lastAppt || nextAppt))} style={{ padding:'8px 12px', background:'#0b8a5e', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>💳 תזכורת תשלום</button>
-                  <Link href={`/whatsapp?patient=${id}`} style={{ padding:'8px 12px', background:'#25d366', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700' }}>💬 כל ההודעות</Link>
-                  <button onClick={() => { const phone = patient.phone?.replace(/^0/,'').replace(/-/g,''); const msg = encodeURIComponent(`שלום ${patient.first_name} ${patient.last_name} 😊\n\nיצרנו עבורך גישה אישית לפורטל הקליניקה!\n\n🔗 לכניסה:\nhttps://yoavavni-9dy3.vercel.app/portal\n\nהיכנס עם מספר הטלפון שלך: ${patient.phone}\n\nבפורטל תוכל:\n📅 לקבוע תורים בעצמך\n📋 לראות את התורים הקרובים שלך\n\nקליניקת יואב אבני`); window.open(`https://wa.me/972${phone}?text=${msg}`, '_blank') }} style={{ padding:'8px 12px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>🔗 הזמן לפורטל</button>
-                </>
-              )
-            })()}
+            {patient.phone && (
+              <>
+                {nextAppt && <button onClick={() => openWA(patient.phone, buildContractMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#1e4a7a', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>📋 חוזה טיפולי</button>}
+                {nextAppt && <button onClick={() => openWA(patient.phone, buildReminderMsg(patient, nextAppt))} style={{ padding:'8px 12px', background:'#7c3aed', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>⏰ תזכורת לתור</button>}
+                {nextAppt && (
+                  <a href={buildCalendarLink(nextAppt, patient)} target="_blank" rel="noreferrer" style={{ padding:'8px 12px', background:'#4285F4', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700', textDecoration:'none' }}>📅 הוסף ליומן</a>
+                )}
+                <button onClick={() => openWA(patient.phone, buildPaymentMsg(patient, lastAppt || nextAppt))} style={{ padding:'8px 12px', background:'#0b8a5e', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>💳 תזכורת תשלום</button>
+                <Link href={`/whatsapp?patient=${id}`} style={{ padding:'8px 12px', background:'#25d366', color:'#fff', borderRadius:'8px', fontSize:'11px', fontWeight:'700' }}>💬 כל ההודעות</Link>
+                <button onClick={() => { const phone = patient.phone?.replace(/^0/,'').replace(/-/g,''); const msg = encodeURIComponent(`שלום ${patient.first_name} ${patient.last_name} 😊\n\nיצרנו עבורך גישה אישית לפורטל הקליניקה!\n\n🔗 לכניסה:\nhttps://yoavavni-9dy3.vercel.app/portal\n\nהיכנס עם מספר הטלפון שלך: ${patient.phone}\n\nבפורטל תוכל:\n📅 לקבוע תורים בעצמך\n📋 לראות את התורים הקרובים שלך\n\nקליניקת יואב אבני`); window.open(`https://wa.me/972${phone}?text=${msg}`, '_blank') }} style={{ padding:'8px 12px', background:'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'11px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>🔗 הזמן לפורטל</button>
+              </>
+            )}
             <Link href={`/calendar/new?patient=${id}`} style={{ padding:'8px 14px', background:'#3eb8e5', color:'#fff', borderRadius:'8px', fontSize:'12px', fontWeight:'700' }}>+ תור</Link>
             {patient && <HEPPanel patient={patient} />}
             <button onClick={() => setEditing(!editing)} style={{ padding:'8px 14px', background:editing?'#e2e8f0':'#1a3a5c', color:editing?'#475569':'#fff', border:'none', borderRadius:'8px', fontSize:'12px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>{editing ? 'ביטול' : '✏️ עריכה'}</button>
@@ -418,14 +436,12 @@ export default function PatientProfilePage() {
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'14px', flexWrap:'wrap', gap:'8px' }}>
               <div style={{ fontSize:'14px', fontWeight:'700', color:'#1a3a5c' }}>ראיון קבלה</div>
               <div style={{ display:'flex', gap:'8px' }}>
-                <button onClick={getAiRecommendation} disabled={aiLoading} style={{ padding:'9px 16px', background: aiLoading ? '#94a3b8' : 'linear-gradient(135deg, #7c3aed, #4f46e5)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor: aiLoading ? 'not-allowed' : 'pointer', fontFamily:'Heebo, sans-serif', boxShadow: aiLoading ? 'none' : '0 4px 12px rgba(124,58,237,0.3)' }}>
+                <button onClick={getAiRecommendation} disabled={aiLoading} style={{ padding:'9px 16px', background: aiLoading ? '#94a3b8' : 'linear-gradient(135deg, #7c3aed, #4f46e5)', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor: aiLoading ? 'not-allowed' : 'pointer', fontFamily:'Heebo, sans-serif' }}>
                   {aiLoading ? '⏳ מנתח...' : '✨ המלץ תוכנית טיפול'}
                 </button>
                 <button onClick={saveIntake} disabled={intakeSaving} style={{ padding:'9px 20px', background:intakeSaving?'#94a3b8':'#1a3a5c', color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:'700', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>{intakeSaving?'⏳ שומר...':'💾 שמור ראיון'}</button>
               </div>
             </div>
-
-            {/* תוצאות AI */}
             {aiRec && (
               <div style={{ background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)', border: '2px solid #7c3aed', borderRadius: '14px', padding: '20px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -436,7 +452,6 @@ export default function PatientProfilePage() {
                 <div style={{ marginTop: '12px', fontSize: '11px', color: '#7c3aed', fontStyle: 'italic' }}>* ההמלצות מבוססות על הממצאים שהוזנו. השיקול הקליני הסופי הוא של הפיזיותרפיסט.</div>
               </div>
             )}
-
             <div style={card}>
               <h3 style={{fontWeight:'700',marginBottom:'14px',fontSize:'13px',color:'#1a3a5c',borderBottom:'1px solid #f1f5f9',paddingBottom:'8px'}}>📋 רקע ואבחנות</h3>
               <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
@@ -558,6 +573,9 @@ export default function PatientProfilePage() {
                 <div style={{flex:1,fontSize:'13px'}}>{a.service?.icon} {a.service?.name_he}</div>
                 {a.price&&<div style={{fontSize:'13px',fontWeight:'600',color:'#0b8a5e'}}>₪{a.price}</div>}
                 <span style={{padding:'3px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:'600',background:APPOINTMENT_STATUS[a.status]?.bg||'#f1f5f9',color:APPOINTMENT_STATUS[a.status]?.color||'#475569'}}>{APPOINTMENT_STATUS[a.status]?.label||a.status}</span>
+                {a.date >= today && a.status !== 'cancelled' && (
+                  <a href={buildCalendarLink(a, patient)} target="_blank" rel="noreferrer" style={{padding:'4px 8px',background:'#4285F4',color:'#fff',borderRadius:'6px',fontSize:'11px',fontWeight:'600',textDecoration:'none'}}>📅</a>
+                )}
               </div>
             ))}
           </div>
