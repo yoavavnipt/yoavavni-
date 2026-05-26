@@ -18,9 +18,10 @@ export default function Sidebar() {
 
   const NAV = [
     { section: 'ראשי', items: [
-      { href: '/dashboard', icon: '📊', label: 'ראשי', show: true },
-      { href: '/patients',  icon: '👥', label: 'מטופלים',   show: true },
-      { href: '/calendar',  icon: '📅', label: 'יומן תורים', show: true },
+      { href: '/dashboard',     icon: '📊', label: 'ראשי',             show: true },
+      { href: '/patients',      icon: '👥', label: 'מטופלים',          show: true },
+      { href: '/organizations', icon: '🏆', label: 'ארגונים וקבוצות', show: true },
+      { href: '/calendar',      icon: '📅', label: 'יומן תורים',       show: true },
     ]},
     { section: 'רפואי', items: [
       { href: '/slots',     icon: '🕐', label: 'שעות פתוחות', show: true },
@@ -34,7 +35,6 @@ export default function Sidebar() {
       { href: '/templates', icon: '✏️',  label: 'עריכת תבניות',   show: isAdmin },
     ]},
     { section: 'ניהול', items: [
-      { href: '/organizations', icon: '🏆', label: 'ארגונים וקבוצות', show: isAdmin },
       { href: '/reports',     icon: '📈', label: 'דוחות',          show: isAdmin },
       { href: '/letters',     icon: '📝', label: 'מכתבים רפואיים', show: isAdmin || isTherapist },
       { href: '/reports-pdf', icon: '📄', label: 'דוחות PDF',      show: isAdmin },
