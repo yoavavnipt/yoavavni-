@@ -15,6 +15,7 @@ export default function Sidebar() {
   const isAdmin = user?.role === 'admin'
   const isTherapist = user?.role === 'therapist'
   const isSecretary = user?.role === 'secretary'
+  const canSocial = isAdmin || user?.permissions?.includes('social')
 
   const NAV = [
     { section: 'ראשי', items: [
@@ -24,15 +25,16 @@ export default function Sidebar() {
       { href: '/calendar',      icon: '📅', label: 'יומן תורים',       show: true },
     ]},
     { section: 'רפואי', items: [
-      { href: '/slots',     icon: '🕐', label: 'שעות פתוחות', show: true },
-      { href: '/billing',   icon: '💰', label: 'חיוב וקבלות', show: isAdmin || isSecretary },
-      { href: '/expenses',  icon: '💸', label: 'הוצאות',      show: isAdmin },
-      { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים', show: true },
+      { href: '/slots',     icon: '🕐', label: 'שעות פתוחות',       show: true },
+      { href: '/billing',   icon: '💰', label: 'חיוב וקבלות',       show: isAdmin || isSecretary },
+      { href: '/expenses',  icon: '💸', label: 'הוצאות',             show: isAdmin },
+      { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים',      show: true },
       { href: '/products',  icon: '🛒', label: 'מוצרים וכרטיסיות', show: isAdmin || isSecretary },
     ]},
     { section: 'תקשורת', items: [
       { href: '/whatsapp',  icon: '💬', label: 'הודעות WhatsApp', show: true },
       { href: '/templates', icon: '✏️',  label: 'עריכת תבניות',   show: isAdmin },
+      { href: '/social',    icon: '📱', label: 'סושיאל מדיה',     show: canSocial },
     ]},
     { section: 'ניהול', items: [
       { href: '/reports',     icon: '📈', label: 'דוחות',          show: isAdmin },
