@@ -215,8 +215,8 @@ export default function SocialMediaPage() {
 
       // אם יש סקריפט, עבור לטאב הסקריפט אחרי יצירה
       if (parsed.voiceover_script) setActiveTab('content')
-    } catch {
-      alert('שגיאה ביצירת התוכן. ייתכן שאין קרדיט ב-Anthropic.')
+    } catch (err: any) {
+      alert('שגיאה: ' + err.message)
     }
     setLoading(false)
   }
