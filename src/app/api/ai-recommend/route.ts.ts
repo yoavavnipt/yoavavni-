@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export async function GET() {
+  return NextResponse.json({ status: 'ok', message: 'AI route is working' })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json()
@@ -8,7 +12,6 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ text: 'שגיאה: ANTHROPIC_API_KEY לא מוגדר' }, { status: 400 })
     }
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -22,7 +25,6 @@ export async function POST(req: NextRequest) {
         messages: [{ role: 'user', content: prompt }],
       }),
     })
-
     const data = await response.json()
     
     if (!response.ok || data.error) {
@@ -30,7 +32,6 @@ export async function POST(req: NextRequest) {
         text: `שגיאה ${response.status}: ${data.error?.message || JSON.stringify(data)}` 
       }, { status: 400 })
     }
-
     const text = data.content?.[0]?.text || 'לא התקבלה תשובה'
     return NextResponse.json({ text })
   } catch (err: any) {
