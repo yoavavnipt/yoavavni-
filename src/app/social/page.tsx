@@ -39,6 +39,8 @@ const CAROUSEL_TOPICS = [
   'כיצד הגוף לומד כאב',
 ]
 
+const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v'
+
 type Mode = 'reel' | 'story' | 'carousel' | 'post'
 
 export default function SocialMediaPage() {
@@ -52,6 +54,8 @@ export default function SocialMediaPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [activeTab, setActiveTab] = useState<'content' | 'script' | 'srt' | 'carousel'>('content')
+  const [publishing, setPublishing] = useState(false)
+  const [published, setPublished] = useState(false)
 
   function handleFile(file: File) {
     if (!file.type.startsWith('video/')) { alert('יש להעלות קובץ וידאו בלבד'); return }
@@ -69,6 +73,22 @@ export default function SocialMediaPage() {
     const a = document.createElement('a')
     a.href = url; a.download = 'captions.srt'; a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function publishToMake() {
+    if (!result) return
+    setPublishing(true); setPublished(false)
+    try {
+      const caption = `${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`
+      await fetch(MAKE_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: mode, caption, topic, image_url: '' })
+      })
+      setPublished(true)
+      setTimeout(() => setPublished(false), 4000)
+    } catch { alert('שגיאה בשליחה ל-Make') }
+    setPublishing(false)
   }
 
   async function generate() {
@@ -140,48 +160,12 @@ export default function SocialMediaPage() {
   "caption": "טקסט לפוסט (150 מילים)",
   "hashtags": "#פיזיותרפיה #שיקום #כאבגב #ספורט #בריאות #יואבאבני #קליניקתיואבאבני #physiotherapy #motionislotion",
   "slides": [
-    {
-      "num": 1,
-      "type": "hook",
-      "headline": "כותרת ראשית מושכת עם קו תחתי",
-      "body": "",
-      "design": "רקע: תמונת סטוק + overlay כחול כהה שקוף | טקסט לבן גדול | לוגו YOAVAVNI בתחתית"
-    },
-    {
-      "num": 2,
-      "type": "problem",
-      "headline": "כותרת הבעיה",
-      "body": "הסבר קצר 2-3 שורות",
-      "design": "תמונת סטוק רלוונטית + overlay | טקסט לבן | לוגו"
-    },
-    {
-      "num": 3,
-      "type": "insight",
-      "headline": "תובנה מפתיעה",
-      "body": "הסבר + נקודות",
-      "design": "תמונה + overlay"
-    },
-    {
-      "num": 4,
-      "type": "solution",
-      "headline": "הפתרון",
-      "body": "3-4 נקודות עם ✓",
-      "design": "תמונת ספורט/תרגול + overlay"
-    },
-    {
-      "num": 5,
-      "type": "proof",
-      "headline": "למה זה עובד",
-      "body": "הסבר מדעי קצר",
-      "design": "תמונה + overlay"
-    },
-    {
-      "num": 6,
-      "type": "cta",
-      "headline": "אהבתם? עקבו לעוד!",
-      "body": "לתיאום: 054-5953889",
-      "design": "רקע תכלת בהיר + לוגו YOAVAVNI גדול במרכז"
-    }
+    {"num": 1, "type": "hook", "headline": "כותרת ראשית מושכת עם קו תחתי", "body": "", "design": "רקע: תמונת סטוק + overlay כחול כהה שקוף | טקסט לבן גדול | לוגו YOAVAVNI בתחתית"},
+    {"num": 2, "type": "problem", "headline": "כותרת הבעיה", "body": "הסבר קצר 2-3 שורות", "design": "תמונת סטוק רלוונטית + overlay | טקסט לבן | לוגו"},
+    {"num": 3, "type": "insight", "headline": "תובנה מפתיעה", "body": "הסבר + נקודות", "design": "תמונה + overlay"},
+    {"num": 4, "type": "solution", "headline": "הפתרון", "body": "3-4 נקודות עם ✓", "design": "תמונת ספורט/תרגול + overlay"},
+    {"num": 5, "type": "proof", "headline": "למה זה עובד", "body": "הסבר מדעי קצר", "design": "תמונה + overlay"},
+    {"num": 6, "type": "cta", "headline": "אהבתם? עקבו לעוד!", "body": "לתיאום: 054-5953889", "design": "רקע תכלת בהיר + לוגו YOAVAVNI גדול במרכז"}
   ],
   "photo_keywords": ["מילות חיפוש לתמונת סטוק 1", "מילות חיפוש 2", "מילות חיפוש 3", "מילות חיפוש 4", "מילות חיפוש 5", "לוגו"],
   "tips": ["טיפ עיצוב 1", "טיפ 2", "טיפ 3"]
@@ -212,8 +196,6 @@ export default function SocialMediaPage() {
       const clean = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
       setResult(parsed)
-
-      // אם יש סקריפט, עבור לטאב הסקריפט אחרי יצירה
       if (parsed.voiceover_script) setActiveTab('content')
     } catch (err: any) {
       alert('שגיאה: ' + err.message)
@@ -273,9 +255,7 @@ export default function SocialMediaPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: result ? '380px 1fr' : '600px', gap: '20px', justifyContent: result ? 'stretch' : 'center' }}>
-          {/* צד שמאל */}
           <div>
-            {/* העלאת סרטון — רק לרילס/סטורי */}
             {(mode === 'reel' || mode === 'story') && (
               <div onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={handleDrop}
                 onClick={() => !video && fileRef.current?.click()}
@@ -300,21 +280,15 @@ export default function SocialMediaPage() {
               </div>
             )}
 
-            {/* תיאור תוכן */}
             <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>
                 {mode === 'carousel' ? '📋 נושא הקרוסל *' : mode === 'post' ? '📋 נושא הפוסט *' : '📋 תאר את תוכן הסרטון *'}
               </label>
               <textarea value={topic} onChange={e => setTopic(e.target.value)}
-                placeholder={
-                  mode === 'reel' ? 'לדוגמה: מסביר למה מנוחה ממושכת מגדילה כאב — Motion is lotion...' :
-                  mode === 'story' ? 'לדוגמה: טיפ מהיר לכאב גב תחתון...' :
-                  mode === 'carousel' ? 'לדוגמה: למה מנוחה לא פותרת כאב גב, 5 תרגילים לשיקום...' :
-                  'לדוגמה: פוסט חינוכי על חשיבות התנועה בשיקום...'}
+                placeholder={mode === 'reel' ? 'לדוגמה: מסביר למה מנוחה ממושכת מגדילה כאב...' : mode === 'story' ? 'לדוגמה: טיפ מהיר לכאב גב תחתון...' : mode === 'carousel' ? 'לדוגמה: למה מנוחה לא פותרת כאב גב...' : 'לדוגמה: פוסט חינוכי על חשיבות התנועה...'}
                 style={{ width: '100%', minHeight: '90px', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', resize: 'vertical', outline: 'none', direction: 'rtl' }} />
             </div>
 
-            {/* השראה */}
             {(mode === 'reel' || mode === 'story') && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 רעיונות ל-Hook</div>
@@ -323,9 +297,7 @@ export default function SocialMediaPage() {
                     <div key={i} onClick={() => setTopic(prev => prev ? prev + '. ' + h : h)}
                       style={{ padding: '7px 10px', background: '#f8fafc', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: '#374151', border: '1px solid #e2e8f0' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}>
-                      {h}
-                    </div>
+                      onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}>{h}</div>
                   ))}
                 </div>
               </div>
@@ -333,14 +305,12 @@ export default function SocialMediaPage() {
 
             {mode === 'carousel' && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 נושאים מומלצים לקרוסל</div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 נושאים מומלצים</div>
                 {CAROUSEL_TOPICS.map((t, i) => (
                   <div key={i} onClick={() => setTopic(t)}
                     style={{ padding: '7px 10px', background: '#f8fafc', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: '#374151', border: '1px solid #e2e8f0', marginBottom: '5px' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}>
-                    {t}
-                  </div>
+                    onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}>{t}</div>
                 ))}
               </div>
             )}
@@ -351,14 +321,12 @@ export default function SocialMediaPage() {
             </button>
           </div>
 
-          {/* צד ימין — תוצאות */}
           {result && (
             <div>
-              {/* טאבים */}
               <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '14px' }}>
                 {[
                   { key: 'content', label: '📄 תוכן' },
-                  ...(result.voiceover_script ? [{ key: 'script', label: '🎙️ סקריפט' }, { key: 'srt', label: '📺 כתוביות SRT' }] : []),
+                  ...(result.voiceover_script ? [{ key: 'script', label: '🎙️ סקריפט' }, { key: 'srt', label: '📺 SRT' }] : []),
                   ...(result.slides ? [{ key: 'carousel', label: '🎠 קרוסל' }] : []),
                 ].map(t => (
                   <button key={t.key} onClick={() => setActiveTab(t.key as any)}
@@ -368,10 +336,8 @@ export default function SocialMediaPage() {
                 ))}
               </div>
 
-              {/* טאב תוכן */}
               {activeTab === 'content' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* Hook */}
                   {(result.hook || result.headline || result.title) && (
                     <div style={{ background: 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', borderRadius: '14px', padding: '20px', color: '#fff' }}>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', fontWeight: '700' }}>🎯 {mode === 'carousel' ? 'כותרת' : 'Hook'}</div>
@@ -380,7 +346,6 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* Text Overlay */}
                   {result.text_overlay && (
                     <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -392,7 +357,6 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* Sticker */}
                   {mode === 'story' && result.sticker && (
                     <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px' }}>🎪 סטיקר</div>
@@ -404,29 +368,23 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* Caption */}
                   <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>💬 טקסט לפוסט / caption</div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>💬 caption</div>
                       <CopyBtn text={(result.caption || '') + '\n\n' + (result.cta || '') + '\n\n' + (result.hashtags || '')} k="full" />
                     </div>
                     <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.8', whiteSpace: 'pre-wrap', direction: 'rtl', maxHeight: '180px', overflowY: 'auto', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>{result.caption}</div>
                   </div>
 
-                  {/* CTA */}
                   {result.cta && (
                     <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>🚀 CTA</div>
-                          <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a3a5c' }}>{result.cta}</div>
-                        </div>
+                        <div><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>🚀 CTA</div><div style={{ fontSize: '14px', fontWeight: '700', color: '#1a3a5c' }}>{result.cta}</div></div>
                         <CopyBtn text={result.cta} k="cta" />
                       </div>
                     </div>
                   )}
 
-                  {/* Hashtags */}
                   {result.hashtags && (
                     <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -437,38 +395,28 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* Photo description (post) */}
                   {result.photo_description && (
                     <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                       <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>🖼️ תמונה מומלצת</div>
                       <div style={{ fontSize: '13px', color: '#374151', marginBottom: '6px' }}>{result.photo_description}</div>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>חיפוש Unsplash/Pexels: <strong>{result.photo_keywords}</strong></div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>חיפוש: <strong>{result.photo_keywords}</strong></div>
                     </div>
                   )}
 
-                  {/* Design notes (post) */}
                   {result.design_notes && (
                     <div style={{ background: '#f0f9ff', borderRadius: '12px', padding: '14px', border: '1px solid #bae6fd' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#0369a1', marginBottom: '6px' }}>🎨 הנחיות עיצוב YOAVAVNI</div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#0369a1', marginBottom: '6px' }}>🎨 הנחיות עיצוב</div>
                       <div style={{ fontSize: '12px', color: '#374151' }}>{result.design_notes}</div>
                     </div>
                   )}
 
-                  {/* Music + Time */}
                   {(result.music_mood || result.best_time) && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      {result.music_mood && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>🎵 מוזיקה</div>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.music_mood}</div>
-                      </div>}
-                      {result.best_time && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>⏰ זמן פרסום</div>
-                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.best_time}</div>
-                      </div>}
+                      {result.music_mood && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>🎵 מוזיקה</div><div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.music_mood}</div></div>}
+                      {result.best_time && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>⏰ זמן פרסום</div><div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.best_time}</div></div>}
                     </div>
                   )}
 
-                  {/* Tips */}
                   {result.tips && (
                     <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', borderRadius: '12px', padding: '14px', border: '1px solid #bbf7d0' }}>
                       <div style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', marginBottom: '8px' }}>💡 טיפים</div>
@@ -480,15 +428,20 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* העתק הכל */}
-                  <button onClick={() => copy(`${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')}
-                    style={{ width: '100%', padding: '13px', background: copiedKey === 'all' ? '#0b8a5e' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                    {copiedKey === 'all' ? '✅ הועתק!' : '📋 העתק הכל לאינסטגרם'}
-                  </button>
+                  {/* כפתורי פרסום */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button onClick={() => copy(`${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')}
+                      style={{ padding: '13px', background: copiedKey === 'all' ? '#0b8a5e' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                      {copiedKey === 'all' ? '✅ הועתק!' : '📋 העתק הכל'}
+                    </button>
+                    <button onClick={publishToMake} disabled={publishing}
+                      style={{ padding: '13px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                      {published ? '✅ נשלח ל-Make!' : publishing ? '⏳ שולח...' : '📤 שלח ל-Make →Instagram'}
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* טאב סקריפט קריינות */}
               {activeTab === 'script' && result.voiceover_script && (
                 <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -496,7 +449,7 @@ export default function SocialMediaPage() {
                     <CopyBtn text={result.voiceover_script.map((l: any) => `[${l.second}שנ] ${l.text}`).join('\n')} k="script" />
                   </div>
                   <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '10px' }}>💡 קרא כל משפט בזמן המצוין — הקלט ואז הכנס לעריכה</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '10px' }}>💡 קרא כל משפט בזמן המצוין</div>
                     {result.voiceover_script.map((line: any, i: number) => (
                       <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '10px', background: '#fff', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
                         <div style={{ minWidth: '52px', padding: '4px 8px', background: '#1a3a5c', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: '#fff', textAlign: 'center' }}>{line.second}שנ'</div>
@@ -506,24 +459,21 @@ export default function SocialMediaPage() {
                   </div>
                   <button onClick={() => copy(result.voiceover_script.map((l: any) => l.text).join('\n\n'), 'script_plain')}
                     style={{ width: '100%', padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                    {copiedKey === 'script_plain' ? '✅ הועתק!' : '📋 העתק טקסט לקריינות'}
+                    {copiedKey === 'script_plain' ? '✅ הועתק!' : '📋 העתק לקריינות'}
                   </button>
                 </div>
               )}
 
-              {/* טאב SRT */}
               {activeTab === 'srt' && result.voiceover_script && (
                 <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c', marginBottom: '8px' }}>📺 קובץ כתוביות SRT</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>הורד את הקובץ והכנס לקאפקאט / Premiere / כל כלי עריכה</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '14px' }}>הורד והכנס לקאפקאט / Premiere</div>
                   <pre style={{ background: '#1e293b', color: '#e2e8f0', borderRadius: '10px', padding: '16px', fontSize: '12px', overflowX: 'auto', lineHeight: '1.8', direction: 'ltr', textAlign: 'left' }}>
                     {generateSRT(result.voiceover_script)}
                   </pre>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
                     <button onClick={() => downloadSRT(generateSRT(result.voiceover_script))}
-                      style={{ padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                      ⬇️ הורד SRT
-                    </button>
+                      style={{ padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>⬇️ הורד SRT</button>
                     <button onClick={() => copy(generateSRT(result.voiceover_script), 'srt')}
                       style={{ padding: '11px', background: copiedKey === 'srt' ? '#0b8a5e' : '#f1f5f9', color: copiedKey === 'srt' ? '#fff' : '#374151', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
                       {copiedKey === 'srt' ? '✅ הועתק' : '📋 העתק SRT'}
@@ -532,11 +482,10 @@ export default function SocialMediaPage() {
                 </div>
               )}
 
-              {/* טאב קרוסל */}
               {activeTab === 'carousel' && result.slides && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>🔍 מילות חיפוש לתמונות Unsplash/Pexels</div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>🔍 מילות חיפוש לתמונות</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                       {result.photo_keywords?.map((kw: string, i: number) => (
                         <span key={i} onClick={() => copy(kw, `kw${i}`)} style={{ padding: '4px 10px', background: '#fff', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#1a3a5c', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
@@ -560,7 +509,7 @@ export default function SocialMediaPage() {
                   ))}
                   {result.tips && (
                     <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', borderRadius: '12px', padding: '14px', border: '1px solid #bbf7d0' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', marginBottom: '8px' }}>💡 טיפי עיצוב לקרוסל</div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', marginBottom: '8px' }}>💡 טיפי עיצוב</div>
                       {result.tips.map((tip: string, i: number) => (
                         <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '5px', fontSize: '12px', color: '#374151' }}>
                           <span style={{ color: '#0b8a5e', fontWeight: '700' }}>{i + 1}.</span><span>{tip}</span>
