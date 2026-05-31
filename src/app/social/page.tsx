@@ -75,6 +75,21 @@ export default function SocialMediaPage() {
     URL.revokeObjectURL(url)
   }
 
+  async function publishTopicToMake() {
+    if (!topic) { alert('כתוב נושא קודם'); return }
+    setPublishing(true); setPublished(false)
+    try {
+      await fetch(MAKE_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: mode, caption: topic, topic, image_url: '' })
+      })
+      setPublished(true)
+      setTimeout(() => setPublished(false), 4000)
+    } catch { alert('שגיאה בשליחה ל-Make') }
+    setPublishing(false)
+  }
+
   async function publishToMake() {
     if (!result) return
     setPublishing(true); setPublished(false)
@@ -319,6 +334,14 @@ export default function SocialMediaPage() {
               style={{ width: '100%', padding: '14px', background: loading || !topic ? '#94a3b8' : 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '800', cursor: loading || !topic ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
               {loading ? '⏳ ה-AI מכין תוכן...' : `✨ צור ${mode === 'reel' ? 'רילס' : mode === 'story' ? 'סטורי' : mode === 'carousel' ? 'קרוסל' : 'פוסט'}`}
             </button>
+
+            {/* כפתור שמירה ב-Make בלי AI */}
+            {topic && (
+              <button onClick={publishTopicToMake} disabled={publishing}
+                style={{ width: '100%', padding: '11px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: '8px' }}>
+                {published ? '✅ נשמר ב-Make!' : publishing ? '⏳ שולח...' : '📤 שמור נושא ב-Make (ללא AI)'}
+              </button>
+            )}
           </div>
 
           {result && (
