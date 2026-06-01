@@ -205,9 +205,33 @@ export default function SocialMediaPage() {
     }
 
     try {
-      const res = await fetch('/api/ai-recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || ''
+      if (!apiKey) {
+        alert('שגיאה: NEXT_PUBLIC_ANTHROPIC_API_KEY לא מוגדר ב-Vercel')
+        setLoading(false)
+        return
+      }
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-5',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      })
       const data = await res.json()
-      const text = data.text || ''
+      if (!res.ok || data.error) {
+        alert(`שגיאה ${res.status}: ${data.error?.message || JSON.stringify(data)}`)
+        setLoading(false)
+        return
+      }
+      const text = data.content?.[0]?.text || ''
       const clean = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
       setResult(parsed)
@@ -335,7 +359,6 @@ export default function SocialMediaPage() {
               {loading ? '⏳ ה-AI מכין תוכן...' : `✨ צור ${mode === 'reel' ? 'רילס' : mode === 'story' ? 'סטורי' : mode === 'carousel' ? 'קרוסל' : 'פוסט'}`}
             </button>
 
-            {/* כפתור שמירה ב-Make בלי AI */}
             {topic && (
               <button onClick={publishTopicToMake} disabled={publishing}
                 style={{ width: '100%', padding: '11px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: '8px' }}>
@@ -451,7 +474,6 @@ export default function SocialMediaPage() {
                     </div>
                   )}
 
-                  {/* כפתורי פרסום */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <button onClick={() => copy(`${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')}
                       style={{ padding: '13px', background: copiedKey === 'all' ? '#0b8a5e' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
