@@ -1,8 +1,9 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v'
+const UNSPLASH_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || ''
 type Mode = 'reel' | 'story' | 'carousel' | 'post'
 
 const REEL_HOOKS = [
@@ -14,19 +15,87 @@ const REEL_HOOKS = [
   'Motion is lotion — מה זה אומר בפועל?',
 ]
 const STORY_HOOKS = [
-  'ידעת את זה? 🤔',
-  'שאלה: מה גורם לכאב שלך?',
-  'טיפ מהיר לכאב גב 🙌',
-  'האם גם אתה עושה את זה? 👇',
+  'ידעת את זה? 🤔', 'שאלה: מה גורם לכאב שלך?',
+  'טיפ מהיר לכאב גב 🙌', 'האם גם אתה עושה את זה? 👇',
   'הצביעו: כאב גב / כאב ברך',
 ]
 const CAROUSEL_TOPICS = [
-  'מיתוסים על כאב גב',
-  'למה מנוחה לא עוזרת',
-  'שיקום נכון אחרי פציעת ספורט',
-  'תרגילים לחיזוק הגב',
-  'כיצד הגוף לומד כאב',
+  'מיתוסים על כאב גב', 'למה מנוחה לא עוזרת',
+  'שיקום נכון אחרי פציעת ספורט', 'תרגילים לחיזוק הגב', 'כיצד הגוף לומד כאב',
 ]
+
+// מצייר שקף קרוסל על canvas עם תמונה + overlay + טקסט + לוגו
+async function drawSlide(canvas: HTMLCanvasElement, imageUrl: string, headline: string, body: string, slideNum: number, total: number) {
+  const ctx = canvas.getContext('2d')!
+  canvas.width = 1080; canvas.height = 1080
+
+  // תמונת רקע
+  await new Promise<void>((resolve) => {
+    const img = new Image(); img.crossOrigin = 'anonymous'
+    img.onload = () => { ctx.drawImage(img, 0, 0, 1080, 1080); resolve() }
+    img.onerror = () => { ctx.fillStyle = '#1a3a5c'; ctx.fillRect(0, 0, 1080, 1080); resolve() }
+    img.src = imageUrl
+  })
+
+  // overlay כחול כהה
+  ctx.fillStyle = 'rgba(26, 58, 92, 0.72)'
+  ctx.fillRect(0, 0, 1080, 1080)
+
+  // מספר שקף
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'
+  ctx.font = 'bold 28px Arial'
+  ctx.textAlign = 'left'
+  ctx.fillText(`${slideNum}/${total}`, 40, 60)
+
+  // כותרת
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 64px Arial'
+  ctx.textAlign = 'right'
+  ctx.direction = 'rtl'
+  const maxWidth = 960
+  const words = headline.split(' ')
+  let line = ''; let y = 400
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, 1040, y); line = word; y += 80
+    } else { line = test }
+  }
+  ctx.fillText(line, 1040, y)
+
+  // גוף
+  if (body) {
+    ctx.font = '36px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    const bodyWords = body.split(' '); let bLine = ''; let by = y + 100
+    for (const word of bodyWords) {
+      const test = bLine ? bLine + ' ' + word : word
+      if (ctx.measureText(test).width > maxWidth && bLine) {
+        ctx.fillText(bLine, 1040, by); bLine = word; by += 50
+      } else { bLine = test }
+    }
+    ctx.fillText(bLine, 1040, by)
+  }
+
+  // לוגו
+  await new Promise<void>((resolve) => {
+    const logo = new Image(); logo.crossOrigin = 'anonymous'
+    logo.onload = () => {
+      const logoH = 120; const logoW = (logo.width / logo.height) * logoH
+      ctx.drawImage(logo, 1080 - logoW - 40, 1080 - logoH - 40, logoW, logoH)
+      resolve()
+    }
+    logo.onerror = () => resolve()
+    logo.src = '/logo.png'
+  })
+}
+
+async function fetchUnsplashImage(query: string): Promise<string> {
+  try {
+    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&client_id=${UNSPLASH_KEY}`)
+    const data = await res.json()
+    return data.urls?.regular || ''
+  } catch { return '' }
+}
 
 export default function SocialMediaPage() {
   const [video, setVideo] = useState<File | null>(null)
@@ -41,6 +110,9 @@ export default function SocialMediaPage() {
   const [activeTab, setActiveTab] = useState<'content' | 'script' | 'srt' | 'carousel'>('content')
   const [publishing, setPublishing] = useState(false)
   const [published, setPublished] = useState(false)
+  const [slideImages, setSlideImages] = useState<string[]>([])
+  const [generatingImages, setGeneratingImages] = useState(false)
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
   function handleFile(file: File) {
     if (!file.type.startsWith('video/')) { alert('יש להעלות קובץ וידאו בלבד'); return }
@@ -53,24 +125,12 @@ export default function SocialMediaPage() {
   function downloadSRT(srt: string) {
     const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'captions.srt'; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = 'captions.srt'; a.click()
     URL.revokeObjectURL(url)
   }
-  async function publishTopicToMake() {
-    if (!topic) { alert('כתוב נושא קודם'); return }
+  async function publishToMake(caption: string) {
     setPublishing(true); setPublished(false)
     try {
-      await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: mode, caption: topic, topic, image_url: '' }) })
-      setPublished(true); setTimeout(() => setPublished(false), 4000)
-    } catch { alert('שגיאה בשליחה ל-Make') }
-    setPublishing(false)
-  }
-  async function publishToMake() {
-    if (!result) return
-    setPublishing(true); setPublished(false)
-    try {
-      const caption = `${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`
       await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: mode, caption, topic, image_url: '' }) })
       setPublished(true); setTimeout(() => setPublished(false), 4000)
     } catch { alert('שגיאה בשליחה ל-Make') }
@@ -78,16 +138,16 @@ export default function SocialMediaPage() {
   }
 
   function buildPrompt(): string {
-    const base = `קליניקת יואב אבני פיזיותרפיה גילון. נושא: ${topic}. החזר JSON בלבד ללא markdown. כל ערך בשורה אחת ללא enter בתוך המחרוזות.`
-    if (mode === 'reel') return `${base} פורמט: {"hook":"","caption":"עד 60 מילים","cta":"","hashtags":"#פיזיותרפיה #יואבאבני #motionislotion","music_mood":"","best_time":"","text_overlay":"עד 4 מילים","font_style":"Classic לבן","voiceover_script":[{"second":0,"text":""},{"second":5,"text":""},{"second":12,"text":""},{"second":18,"text":""}],"tips":["",""]}`
-    if (mode === 'story') return `${base} פורמט: {"hook":"","text_overlay":"עד 4 מילים","sticker":"שאלה/הצבעה","sticker_text":"","caption":"עד 30 מילים","cta":"","music_mood":"","best_time":"","font_style":"Classic לבן","voiceover_script":[{"second":0,"text":""},{"second":5,"text":""},{"second":10,"text":""}],"tips":["",""]}`
-    if (mode === 'carousel') return `${base} פורמט: {"title":"","caption":"עד 60 מילים","hashtags":"#פיזיותרפיה #יואבאבני","slides":[{"num":1,"type":"hook","headline":"","body":"","design":"overlay כחול"},{"num":2,"type":"problem","headline":"","body":"עד 20 מילים","design":"overlay"},{"num":3,"type":"solution","headline":"","body":"3 נקודות","design":"overlay"},{"num":4,"type":"cta","headline":"עקבו לעוד!","body":"054-5953889","design":"תכלת"}],"photo_keywords":["","",""],"tips":["",""]}`
-    return `${base} פורמט: {"headline":"","caption":"עד 60 מילים","hashtags":"#פיזיותרפיה #יואבאבני","photo_description":"","photo_keywords":"","best_time":"","cta":"","design_notes":""}`
+    const base = `You are a social media expert for an Israeli physiotherapy clinic called "קליניקת יואב אבני" in Gilon. Topic: ${topic}. Return ONLY valid JSON, no markdown, no newlines inside string values.`
+    if (mode === 'reel') return `${base} Format: {"hook":"","caption":"","cta":"","hashtags":"#פיזיותרפיה #יואבאבני #motionislotion","music_mood":"","best_time":"","text_overlay":"","font_style":"Classic White","voiceover_script":[{"second":0,"text":""},{"second":5,"text":""},{"second":12,"text":""},{"second":18,"text":""}],"tips":["",""]}`
+    if (mode === 'story') return `${base} Format: {"hook":"","text_overlay":"","sticker":"","sticker_text":"","caption":"","cta":"","music_mood":"","best_time":"","font_style":"Classic White","voiceover_script":[{"second":0,"text":""},{"second":5,"text":""},{"second":10,"text":""}],"tips":["",""]}`
+    if (mode === 'carousel') return `${base} Format: {"title":"","caption":"","hashtags":"#פיזיותרפיה #יואבאבני #motionislotion","slides":[{"num":1,"type":"hook","headline":"","body":"","photo_query":"physiotherapy exercise"},{"num":2,"type":"problem","headline":"","body":"","photo_query":"back pain"},{"num":3,"type":"solution","headline":"","body":"","photo_query":"physical therapy treatment"},{"num":4,"type":"cta","headline":"","body":"054-5953889","photo_query":"healthy active lifestyle"}],"tips":["",""]}`
+    return `${base} Format: {"headline":"","caption":"","hashtags":"#פיזיותרפיה #יואבאבני","photo_query":"physiotherapy","best_time":"","cta":"","design_notes":""}`
   }
 
   async function generate() {
     if (!topic) { alert('תאר את הנושא קודם'); return }
-    setLoading(true); setResult(null); setActiveTab('content')
+    setLoading(true); setResult(null); setSlideImages([]); setActiveTab('content')
     try {
       const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || ''
       if (!apiKey) { alert('שגיאה: NEXT_PUBLIC_ANTHROPIC_API_KEY לא מוגדר'); setLoading(false); return }
@@ -99,20 +159,44 @@ export default function SocialMediaPage() {
       const data = await res.json()
       if (!res.ok || data.error) { alert(`שגיאה: ${data.error?.message || res.status}`); setLoading(false); return }
       const text = data.content?.[0]?.text || ''
-      const jsonStart = text.indexOf('{')
-      const jsonEnd = text.lastIndexOf('}')
-      if (jsonStart === -1 || jsonEnd === -1) { alert('לא התקבל תוכן תקין מה-AI'); setLoading(false); return }
+      const jsonStart = text.indexOf('{'); const jsonEnd = text.lastIndexOf('}')
+      if (jsonStart === -1 || jsonEnd === -1) { alert('לא התקבל תוכן תקין'); setLoading(false); return }
       let clean = text.substring(jsonStart, jsonEnd + 1)
       let parsed: any = null
       try { parsed = JSON.parse(clean) } catch {
         try { parsed = JSON.parse(clean.replace(/[\r\n\t]+/g, ' ')) } catch {
-          parsed = { hook: '⚠️ תוכן התקבל אך לא ניתן לעבד', caption: text, cta: 'העתק ידנית', hashtags: '', tips: ['נסה שוב'] }
+          parsed = { hook: '⚠️ תוכן התקבל', caption: text, cta: 'העתק ידנית', hashtags: '', tips: ['נסה שוב'] }
         }
       }
       setResult(parsed)
-      if (parsed.voiceover_script) setActiveTab('content')
+      // אם קרוסל — טען תמונות Unsplash
+      if (parsed.slides && UNSPLASH_KEY) {
+        setGeneratingImages(true)
+        setActiveTab('carousel')
+        const imgs = await Promise.all(parsed.slides.map((s: any) => fetchUnsplashImage(s.photo_query || topic)))
+        setSlideImages(imgs)
+        setGeneratingImages(false)
+      }
     } catch (err: any) { alert('שגיאה: ' + err.message) }
     setLoading(false)
+  }
+
+  // צייר slides על canvas כשיש תמונות
+  useEffect(() => {
+    if (!result?.slides || slideImages.length === 0) return
+    result.slides.forEach((slide: any, i: number) => {
+      const canvas = canvasRefs.current[i]
+      if (canvas && slideImages[i]) {
+        drawSlide(canvas, slideImages[i], slide.headline, slide.body || '', i + 1, result.slides.length)
+      }
+    })
+  }, [slideImages, result])
+
+  function downloadSlide(i: number) {
+    const canvas = canvasRefs.current[i]
+    if (!canvas) return
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/jpeg', 0.9)
+    a.download = `slide_${i + 1}.jpg`; a.click()
   }
 
   function generateSRT(script: { second: number; text: string }[]) {
@@ -139,11 +223,11 @@ export default function SocialMediaPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>📱 שיווק סושיאל מדיה</h1>
-            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>AI מכין תוכן בסגנון YOAVAVNI</p>
+            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>AI מכין תוכן + תמונות בסגנון YOAVAVNI</p>
           </div>
           <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             {modes.map(m => (
-              <button key={m.key} onClick={() => { setMode(m.key); setResult(null) }}
+              <button key={m.key} onClick={() => { setMode(m.key); setResult(null); setSlideImages([]) }}
                 style={{ padding: '10px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: mode === m.key ? '700' : '400', background: mode === m.key ? '#1a3a5c' : 'transparent', color: mode === m.key ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>
                 {m.icon} {m.label}
               </button>
@@ -176,7 +260,6 @@ export default function SocialMediaPage() {
                 )}
               </div>
             )}
-
             <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>
                 {mode === 'carousel' ? '📋 נושא הקרוסל *' : mode === 'post' ? '📋 נושא הפוסט *' : '📋 תאר את תוכן הסרטון *'}
@@ -185,7 +268,6 @@ export default function SocialMediaPage() {
                 placeholder={mode === 'reel' ? 'לדוגמה: מסביר למה מנוחה ממושכת מגדילה כאב...' : mode === 'story' ? 'לדוגמה: טיפ מהיר לכאב גב תחתון...' : mode === 'carousel' ? 'לדוגמה: למה מנוחה לא פותרת כאב גב...' : 'לדוגמה: פוסט חינוכי על חשיבות התנועה...'}
                 style={{ width: '100%', minHeight: '90px', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', resize: 'vertical', outline: 'none', direction: 'rtl' }} />
             </div>
-
             {(mode === 'reel' || mode === 'story') && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 רעיונות ל-Hook</div>
@@ -199,7 +281,6 @@ export default function SocialMediaPage() {
                 </div>
               </div>
             )}
-
             {mode === 'carousel' && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 נושאים מומלצים</div>
@@ -211,16 +292,14 @@ export default function SocialMediaPage() {
                 ))}
               </div>
             )}
-
             <button onClick={generate} disabled={loading || !topic}
               style={{ width: '100%', padding: '14px', background: loading || !topic ? '#94a3b8' : 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '800', cursor: loading || !topic ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
               {loading ? '⏳ ה-AI מכין תוכן...' : `✨ צור ${mode === 'reel' ? 'רילס' : mode === 'story' ? 'סטורי' : mode === 'carousel' ? 'קרוסל' : 'פוסט'}`}
             </button>
-
             {topic && (
-              <button onClick={publishTopicToMake} disabled={publishing}
+              <button onClick={() => publishToMake(topic)} disabled={publishing}
                 style={{ width: '100%', padding: '11px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: '8px' }}>
-                {published ? '✅ נשמר ב-Make!' : publishing ? '⏳ שולח...' : '📤 שמור נושא ב-Make (ללא AI)'}
+                {published ? '✅ נשמר ב-Make!' : publishing ? '⏳ שולח...' : '📤 שמור נושא ב-Make'}
               </button>
             )}
           </div>
@@ -292,19 +371,6 @@ export default function SocialMediaPage() {
                       <div style={{ fontSize: '12px', color: '#3b82f6', lineHeight: '1.8' }}>{result.hashtags}</div>
                     </div>
                   )}
-                  {result.photo_description && (
-                    <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>🖼️ תמונה מומלצת</div>
-                      <div style={{ fontSize: '13px', color: '#374151', marginBottom: '6px' }}>{result.photo_description}</div>
-                      <div style={{ fontSize: '11px', color: '#94a3b8' }}>חיפוש: <strong>{result.photo_keywords}</strong></div>
-                    </div>
-                  )}
-                  {result.design_notes && (
-                    <div style={{ background: '#f0f9ff', borderRadius: '12px', padding: '14px', border: '1px solid #bae6fd' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#0369a1', marginBottom: '6px' }}>🎨 הנחיות עיצוב</div>
-                      <div style={{ fontSize: '12px', color: '#374151' }}>{result.design_notes}</div>
-                    </div>
-                  )}
                   {(result.music_mood || result.best_time) && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       {result.music_mood && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>🎵 מוזיקה</div><div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.music_mood}</div></div>}
@@ -322,13 +388,13 @@ export default function SocialMediaPage() {
                     </div>
                   )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <button onClick={() => copy(`${result.hook || result.headline || result.title || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')}
+                    <button onClick={() => copy(`${result.hook || result.headline || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')}
                       style={{ padding: '13px', background: copiedKey === 'all' ? '#0b8a5e' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
                       {copiedKey === 'all' ? '✅ הועתק!' : '📋 העתק הכל'}
                     </button>
-                    <button onClick={publishToMake} disabled={publishing}
+                    <button onClick={() => publishToMake(`${result.hook || result.headline || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`)} disabled={publishing}
                       style={{ padding: '13px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '800', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                      {published ? '✅ נשלח ל-Make!' : publishing ? '⏳ שולח...' : '📤 שלח ל-Make'}
+                      {published ? '✅ נשלח!' : publishing ? '⏳ שולח...' : '📤 שלח ל-Make'}
                     </button>
                   </div>
                 </div>
@@ -340,16 +406,14 @@ export default function SocialMediaPage() {
                     <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c' }}>🎙️ סקריפט קריינות</div>
                     <CopyBtn text={result.voiceover_script.map((l: any) => `[${l.second}שנ] ${l.text}`).join('\n')} k="script" />
                   </div>
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
-                    {result.voiceover_script.map((line: any, i: number) => (
-                      <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '10px', background: '#fff', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ minWidth: '52px', padding: '4px 8px', background: '#1a3a5c', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: '#fff', textAlign: 'center' }}>{line.second}שנ'</div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a3a5c', lineHeight: '1.5', direction: 'rtl' }}>{line.text}</div>
-                      </div>
-                    ))}
-                  </div>
+                  {result.voiceover_script.map((line: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '10px', background: '#f8fafc', borderRadius: '8px', marginBottom: '8px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ minWidth: '52px', padding: '4px 8px', background: '#1a3a5c', borderRadius: '6px', fontSize: '11px', fontWeight: '700', color: '#fff', textAlign: 'center' }}>{line.second}שנ'</div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: '#1a3a5c', lineHeight: '1.5', direction: 'rtl' }}>{line.text}</div>
+                    </div>
+                  ))}
                   <button onClick={() => copy(result.voiceover_script.map((l: any) => l.text).join('\n\n'), 'script_plain')}
-                    style={{ width: '100%', padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                    style={{ width: '100%', padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif', marginTop: '12px' }}>
                     {copiedKey === 'script_plain' ? '✅ הועתק!' : '📋 העתק לקריינות'}
                   </button>
                 </div>
@@ -358,9 +422,7 @@ export default function SocialMediaPage() {
               {activeTab === 'srt' && result.voiceover_script && (
                 <div style={{ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
                   <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c', marginBottom: '8px' }}>📺 קובץ כתוביות SRT</div>
-                  <pre style={{ background: '#1e293b', color: '#e2e8f0', borderRadius: '10px', padding: '16px', fontSize: '12px', overflowX: 'auto', lineHeight: '1.8', direction: 'ltr', textAlign: 'left' }}>
-                    {generateSRT(result.voiceover_script)}
-                  </pre>
+                  <pre style={{ background: '#1e293b', color: '#e2e8f0', borderRadius: '10px', padding: '16px', fontSize: '12px', overflowX: 'auto', lineHeight: '1.8', direction: 'ltr', textAlign: 'left' }}>{generateSRT(result.voiceover_script)}</pre>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
                     <button onClick={() => downloadSRT(generateSRT(result.voiceover_script))} style={{ padding: '11px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>⬇️ הורד SRT</button>
                     <button onClick={() => copy(generateSRT(result.voiceover_script), 'srt')} style={{ padding: '11px', background: copiedKey === 'srt' ? '#0b8a5e' : '#f1f5f9', color: copiedKey === 'srt' ? '#fff' : '#374151', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
@@ -371,32 +433,42 @@ export default function SocialMediaPage() {
               )}
 
               {activeTab === 'carousel' && result.slides && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {result.photo_keywords && (
-                    <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '14px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>🔍 מילות חיפוש לתמונות</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {result.photo_keywords?.map((kw: string, i: number) => (
-                          <span key={i} onClick={() => copy(kw, `kw${i}`)} style={{ padding: '4px 10px', background: '#fff', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#1a3a5c', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                            {copiedKey === `kw${i}` ? '✅' : '🔍'} {kw}
-                          </span>
-                        ))}
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {generatingImages && (
+                    <div style={{ background: '#f0f9ff', borderRadius: '12px', padding: '16px', textAlign: 'center', border: '1px solid #bae6fd' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#0369a1' }}>⏳ מוריד תמונות מ-Unsplash...</div>
                     </div>
                   )}
-                  {result.slides.map((slide: any) => (
-                    <div key={slide.num} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '2px solid #f1f5f9' }}>
+                  {result.slides.map((slide: any, i: number) => (
+                    <div key={slide.num} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                       <div style={{ background: '#1a3a5c', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div style={{ color: '#fff', fontWeight: '700', fontSize: '13px' }}>שקף {slide.num} — {slide.type === 'hook' ? 'Hook' : slide.type === 'problem' ? 'בעיה' : slide.type === 'solution' ? 'פתרון' : 'CTA'}</div>
-                        <CopyBtn text={`${slide.headline}\n${slide.body}`} k={`slide${slide.num}`} />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <CopyBtn text={`${slide.headline}\n${slide.body}`} k={`slide${slide.num}`} />
+                          {slideImages[i] && <button onClick={() => downloadSlide(i)} style={{ padding: '4px 10px', background: '#0b8a5e', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', color: '#fff', fontFamily: 'Heebo, sans-serif' }}>⬇️ הורד</button>}
+                        </div>
                       </div>
-                      <div style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a5c', textDecoration: 'underline', marginBottom: '8px' }}>{slide.headline}</div>
-                        {slide.body && <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{slide.body}</div>}
-                        <div style={{ marginTop: '8px', fontSize: '11px', color: '#94a3b8', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px' }}>🎨 {slide.design}</div>
+                      <div style={{ padding: '0' }}>
+                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: slideImages[i] ? 'block' : 'none', borderRadius: '0 0 12px 12px' }} />
+                        {!slideImages[i] && (
+                          <div style={{ padding: '14px 16px' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a5c', textDecoration: 'underline', marginBottom: '8px' }}>{slide.headline}</div>
+                            {slide.body && <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7' }}>{slide.body}</div>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
+                  {result.caption && (
+                    <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>💬 caption + hashtags</div>
+                        <CopyBtn text={(result.caption || '') + '\n\n' + (result.hashtags || '')} k="carousel_caption" />
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.8', direction: 'rtl', background: '#f8fafc', padding: '10px', borderRadius: '8px' }}>{result.caption}</div>
+                      <div style={{ fontSize: '12px', color: '#3b82f6', marginTop: '8px' }}>{result.hashtags}</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
