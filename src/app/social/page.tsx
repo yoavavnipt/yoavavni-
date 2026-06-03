@@ -221,7 +221,7 @@ export default function SocialMediaPage() {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
-          max_tokens: 1500,
+          max_tokens: 4000,
           messages: [{ role: 'user', content: prompt }],
         }),
       })
@@ -232,8 +232,33 @@ export default function SocialMediaPage() {
         return
       }
       const text = data.content?.[0]?.text || ''
-      const clean = text.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
+      // מוצא JSON בתוך הטקסט
+      let clean = text.replace(/```json|```/g, '').trim()
+      const jsonStart = clean.indexOf('{')
+      const jsonEnd = clean.lastIndexOf('}')
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        clean = clean.substring(jsonStart, jsonEnd + 1)
+      }
+      let parsed: any
+      // ניסיון 1: parse ישיר
+      try { parsed = JSON.parse(clean) } catch { parsed = null }
+      // ניסיון 2: נקה newlines בתוך strings
+      if (!parsed) {
+        try {
+          const fixed = clean.replace(/[\r\n\t]+/g, ' ')
+          parsed = JSON.parse(fixed)
+        } catch { parsed = null }
+      }
+      // ניסיון 3: הצג את התוכן הגולמי כטקסט
+      if (!parsed) {
+        parsed = {
+          hook: '⚠️ תוכן התקבל אך לא ניתן לפרסר כ-JSON',
+          caption: text,
+          cta: 'העתק את הטקסט מעל ידנית',
+          hashtags: '',
+          tips: ['ה-AI החזיר תוכן תקין — רק הפורמט השתבש', 'נסה שוב עם נושא קצר יותר']
+        }
+      }
       setResult(parsed)
       if (parsed.voiceover_script) setActiveTab('content')
     } catch (err: any) {
