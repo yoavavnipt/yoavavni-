@@ -124,6 +124,7 @@ export default function SocialMediaPage() {
   const [publishing, setPublishing] = useState(false)
   const [published, setPublished] = useState(false)
   const [slideImages, setSlideImages] = useState<string[]>([])
+  const [editableSlides, setEditableSlides] = useState<{headline: string, body: string}[]>([])
   const [generatingImages, setGeneratingImages] = useState(false)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
 
@@ -182,6 +183,9 @@ export default function SocialMediaPage() {
         }
       }
       setResult(parsed)
+      if (parsed.slides) {
+        setEditableSlides(parsed.slides.map((s: any) => ({ headline: s.headline || '', body: s.body || '' })))
+      }
       // אם קרוסל — טען תמונות Unsplash
       if (parsed.slides && UNSPLASH_KEY) {
         setGeneratingImages(true)
@@ -200,10 +204,18 @@ export default function SocialMediaPage() {
     result.slides.forEach((slide: any, i: number) => {
       const canvas = canvasRefs.current[i]
       if (canvas && slideImages[i]) {
-        drawSlide(canvas, slideImages[i], slide.headline, slide.body || '', i + 1, result.slides.length)
+        const ed = editableSlides[i]
+        drawSlide(canvas, slideImages[i], ed?.headline || slide.headline, ed?.body || slide.body || '', i + 1, result.slides.length)
       }
     })
-  }, [slideImages, result])
+  }, [slideImages, result, editableSlides])
+
+  function redrawSlide(i: number) {
+    const canvas = canvasRefs.current[i]
+    if (!canvas || !slideImages[i] || !result?.slides) return
+    const ed = editableSlides[i]
+    drawSlide(canvas, slideImages[i], ed?.headline || '', ed?.body || '', i + 1, result.slides.length)
+  }
 
   function downloadSlide(i: number) {
     const canvas = canvasRefs.current[i]
@@ -240,7 +252,7 @@ export default function SocialMediaPage() {
           </div>
           <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
             {modes.map(m => (
-              <button key={m.key} onClick={() => { setMode(m.key); setResult(null); setSlideImages([]) }}
+              <button key={m.key} onClick={() => { setMode(m.key); setResult(null); setSlideImages([]); setEditableSlides([]) }}
                 style={{ padding: '10px 16px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: mode === m.key ? '700' : '400', background: mode === m.key ? '#1a3a5c' : 'transparent', color: mode === m.key ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>
                 {m.icon} {m.label}
               </button>
@@ -462,13 +474,34 @@ export default function SocialMediaPage() {
                         </div>
                       </div>
                       <div style={{ padding: '0' }}>
-                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: slideImages[i] ? 'block' : 'none', borderRadius: '0 0 12px 12px' }} />
-                        {!slideImages[i] && (
-                          <div style={{ padding: '14px 16px' }}>
-                            <div style={{ fontSize: '16px', fontWeight: '800', color: '#1a3a5c', textDecoration: 'underline', marginBottom: '8px' }}>{slide.headline}</div>
-                            {slide.body && <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.7' }}>{slide.body}</div>}
-                          </div>
-                        )}
+                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: slideImages[i] ? 'block' : 'none' }} />
+                        <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט על השקף</div>
+                          <input
+                            value={editableSlides[i]?.headline || ''}
+                            onChange={e => {
+                              const updated = [...editableSlides]
+                              updated[i] = { ...updated[i], headline: e.target.value }
+                              setEditableSlides(updated)
+                            }}
+                            placeholder="כותרת"
+                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', marginBottom: '6px', outline: 'none' }}
+                          />
+                          <input
+                            value={editableSlides[i]?.body || ''}
+                            onChange={e => {
+                              const updated = [...editableSlides]
+                              updated[i] = { ...updated[i], body: e.target.value }
+                              setEditableSlides(updated)
+                            }}
+                            placeholder="טקסט גוף (אופציונלי)"
+                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', marginBottom: '8px', outline: 'none' }}
+                          />
+                          <button onClick={() => redrawSlide(i)}
+                            style={{ width: '100%', padding: '8px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                            🔄 עדכן תמונה
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
