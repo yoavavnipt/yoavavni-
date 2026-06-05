@@ -28,9 +28,8 @@ const DEFAULT_CAROUSEL_TOPICS = [
 
 async function fetchUnsplashImage(query: string): Promise<string> {
   try {
-    const res = await fetch(`/api/unsplash?query=${encodeURIComponent(query)}`)
-    const data = await res.json()
-    return data.url || ''
+    // מחזיר URL לתמונה דרך ה-server שלנו (פותר CORS)
+    return `/api/unsplash?query=${encodeURIComponent(query)}&t=${Date.now()}`
   } catch { return '' }
 }
 
