@@ -3,7 +3,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useState, useRef, useEffect } from 'react'
 
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v'
-const UNSPLASH_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || ''
+const UNSPLASH_KEY = ''
 type Mode = 'reel' | 'story' | 'carousel' | 'post'
 
 const REEL_HOOKS = [
@@ -91,9 +91,9 @@ async function drawSlide(canvas: HTMLCanvasElement, imageUrl: string, headline: 
 
 async function fetchUnsplashImage(query: string): Promise<string> {
   try {
-    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&client_id=${UNSPLASH_KEY}`)
+    const res = await fetch(`/api/unsplash?query=${encodeURIComponent(query)}`)
     const data = await res.json()
-    return data.urls?.regular || ''
+    return data.url || ''
   } catch { return '' }
 }
 
