@@ -1,6 +1,6 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v'
 const UNSPLASH_KEY = ''
@@ -24,83 +24,7 @@ const DEFAULT_CAROUSEL_TOPICS = [
   'שיקום נכון אחרי פציעת ספורט', 'תרגילים לחיזוק הגב', 'כיצד הגוף לומד כאב',
 ]
 
-// מצייר שקף קרוסל על canvas עם תמונה + overlay + טקסט + לוגו
-async function drawSlide(canvas: HTMLCanvasElement, imageUrl: string, headline: string, body: string, slideNum: number, total: number) {
-  const ctx = canvas.getContext('2d')!
-  canvas.width = 1080; canvas.height = 1080
 
-  // תמונת רקע
-  await new Promise<void>((resolve) => {
-    const img = new Image(); img.crossOrigin = 'anonymous'
-    img.onload = () => { ctx.drawImage(img, 0, 0, 1080, 1080); resolve() }
-    img.onerror = () => { ctx.fillStyle = '#1a3a5c'; ctx.fillRect(0, 0, 1080, 1080); resolve() }
-    img.src = imageUrl
-  })
-
-  // overlay כחול כהה
-  ctx.fillStyle = 'rgba(26, 58, 92, 0.72)'
-  ctx.fillRect(0, 0, 1080, 1080)
-
-  // מספר שקף
-  ctx.fillStyle = 'rgba(255,255,255,0.4)'
-  ctx.font = 'bold 28px Arial'
-  ctx.textAlign = 'left'
-  ctx.fillText(`${slideNum}/${total}`, 40, 60)
-
-  // כותרת
-  ctx.fillStyle = '#ffffff'
-  ctx.font = 'bold 64px Arial'
-  ctx.textAlign = 'right'
-  ctx.direction = 'rtl'
-  const maxWidth = 960
-  const words = headline.split(' ')
-  let line = ''; let y = 400
-  for (const word of words) {
-    const test = line ? line + ' ' + word : word
-    if (ctx.measureText(test).width > maxWidth && line) {
-      ctx.fillText(line, 1040, y); line = word; y += 80
-    } else { line = test }
-  }
-  ctx.fillText(line, 1040, y)
-
-  // גוף
-  if (body) {
-    ctx.font = '36px Arial'; ctx.fillStyle = 'rgba(255,255,255,0.85)'
-    const bodyWords = body.split(' '); let bLine = ''; let by = y + 100
-    for (const word of bodyWords) {
-      const test = bLine ? bLine + ' ' + word : word
-      if (ctx.measureText(test).width > maxWidth && bLine) {
-        ctx.fillText(bLine, 1040, by); bLine = word; by += 50
-      } else { bLine = test }
-    }
-    ctx.fillText(bLine, 1040, by)
-  }
-
-  // לוגו עם רקע לבן שקוף לניגודיות
-  await new Promise<void>((resolve) => {
-    const logo = new Image(); logo.crossOrigin = 'anonymous'
-    logo.onload = () => {
-      const logoH = 110; const logoW = (logo.width / logo.height) * logoH
-      const lx = 1080 - logoW - 40; const ly = 1080 - logoH - 40
-      // רקע לבן מעוגל מתחת ללוגו
-      ctx.save()
-      ctx.beginPath()
-      const pad = 14
-      const rx = lx - pad; const ry = ly - pad; const rw = logoW + pad * 2; const rh = logoH + pad * 2; const r = 16
-      ctx.moveTo(rx + r, ry); ctx.lineTo(rx + rw - r, ry); ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r)
-      ctx.lineTo(rx + rw, ry + rh - r); ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh)
-      ctx.lineTo(rx + r, ry + rh); ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r)
-      ctx.lineTo(rx, ry + r); ctx.quadraticCurveTo(rx, ry, rx + r, ry); ctx.closePath()
-      ctx.fillStyle = 'rgba(255,255,255,0.92)'
-      ctx.fill()
-      ctx.restore()
-      ctx.drawImage(logo, lx, ly, logoW, logoH)
-      resolve()
-    }
-    logo.onerror = () => resolve()
-    logo.src = '/logo.png'
-  })
-}
 
 async function fetchUnsplashImage(query: string): Promise<string> {
   try {
@@ -130,7 +54,7 @@ export default function SocialMediaPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [editableSlides, setEditableSlides] = useState<{headline: string, body: string}[]>([])
   const [generatingImages, setGeneratingImages] = useState(false)
-  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
+
 
   function handleFile(file: File) {
     if (!file.type.startsWith('video/')) { alert('יש להעלות קובץ וידאו בלבד'); return }
@@ -229,31 +153,9 @@ export default function SocialMediaPage() {
     setLoading(false)
   }
 
-  // צייר slides על canvas כשיש תמונות
-  useEffect(() => {
-    if (!result?.slides || slideImages.length === 0) return
-    result.slides.forEach((slide: any, i: number) => {
-      const canvas = canvasRefs.current[i]
-      if (canvas && slideImages[i]) {
-        const ed = editableSlides[i]
-        drawSlide(canvas, slideImages[i], ed?.headline || slide.headline, ed?.body || slide.body || '', i + 1, result.slides.length)
-      }
-    })
-  }, [slideImages, result, editableSlides])
 
-  function redrawSlide(i: number) {
-    const canvas = canvasRefs.current[i]
-    if (!canvas || !slideImages[i] || !result?.slides) return
-    const ed = editableSlides[i]
-    drawSlide(canvas, slideImages[i], ed?.headline || '', ed?.body || '', i + 1, result.slides.length)
-  }
 
-  function downloadSlide(i: number) {
-    const canvas = canvasRefs.current[i]
-    if (!canvas) return
-    const a = document.createElement('a'); a.href = canvas.toDataURL('image/jpeg', 0.9)
-    a.download = `slide_${i + 1}.jpg`; a.click()
-  }
+
 
   function generateSRT(script: { second: number; text: string }[]) {
     return script.map((line, i) => {
@@ -511,37 +413,46 @@ export default function SocialMediaPage() {
                         <div style={{ color: '#fff', fontWeight: '700', fontSize: '13px' }}>שקף {slide.num} — {slide.type === 'hook' ? 'Hook' : slide.type === 'problem' ? 'בעיה' : slide.type === 'solution' ? 'פתרון' : 'CTA'}</div>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <CopyBtn text={`${slide.headline}\n${slide.body}`} k={`slide${slide.num}`} />
-                          {slideImages[i] && <button onClick={() => downloadSlide(i)} style={{ padding: '4px 10px', background: '#0b8a5e', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', color: '#fff', fontFamily: 'Heebo, sans-serif' }}>⬇️ הורד</button>}
+
                         </div>
                       </div>
                       <div style={{ padding: '0' }}>
-                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: 'block' }} />
+                        {/* תמונה עם overlay CSS */}
+                        <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', background: '#1a3a5c' }}>
+                          {slideImages[i] && (
+                            <img src={slideImages[i]} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                          )}
+                          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(26,58,92,0.68)' }} />
+                          <div style={{ position: 'absolute', top: '12px', right: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', fontWeight: '700' }}>{i+1}/{result.slides.length}</div>
+                          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '90%', textAlign: 'center', direction: 'rtl' }}>
+                            <div style={{ color: '#fff', fontSize: 'clamp(16px,3vw,28px)', fontWeight: '900', lineHeight: '1.3', textShadow: '0 2px 8px rgba(0,0,0,0.5)', marginBottom: '12px' }}>
+                              {editableSlides[i]?.headline || slide.headline}
+                            </div>
+                            {(editableSlides[i]?.body || slide.body) && (
+                              <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(12px,2vw,18px)', lineHeight: '1.5', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                                {editableSlides[i]?.body || slide.body}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ position: 'absolute', bottom: '12px', left: '16px', background: 'rgba(255,255,255,0.92)', borderRadius: '10px', padding: '6px 10px' }}>
+                            <img src="/logo.png" alt="logo" style={{ height: '36px', display: 'block' }} />
+                          </div>
+                        </div>
+                        {/* עריכת טקסט */}
                         <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט על השקף</div>
+                          <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט</div>
                           <input
                             value={editableSlides[i]?.headline || ''}
-                            onChange={e => {
-                              const updated = [...editableSlides]
-                              updated[i] = { ...updated[i], headline: e.target.value }
-                              setEditableSlides(updated)
-                            }}
+                            onChange={e => { const u = [...editableSlides]; u[i] = { ...u[i], headline: e.target.value }; setEditableSlides(u) }}
                             placeholder="כותרת"
-                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', marginBottom: '6px', outline: 'none' }}
+                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', marginBottom: '6px', outline: 'none', boxSizing: 'border-box' }}
                           />
                           <input
                             value={editableSlides[i]?.body || ''}
-                            onChange={e => {
-                              const updated = [...editableSlides]
-                              updated[i] = { ...updated[i], body: e.target.value }
-                              setEditableSlides(updated)
-                            }}
+                            onChange={e => { const u = [...editableSlides]; u[i] = { ...u[i], body: e.target.value }; setEditableSlides(u) }}
                             placeholder="טקסט גוף (אופציונלי)"
-                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', marginBottom: '8px', outline: 'none' }}
+                            style={{ width: '100%', padding: '8px 10px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', fontFamily: 'Heebo, sans-serif', direction: 'rtl', outline: 'none', boxSizing: 'border-box' }}
                           />
-                          <button onClick={() => redrawSlide(i)}
-                            style={{ width: '100%', padding: '8px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                            🔄 עדכן תמונה
-                          </button>
                         </div>
                       </div>
                     </div>
