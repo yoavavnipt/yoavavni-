@@ -6,7 +6,7 @@ const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v
 const UNSPLASH_KEY = ''
 type Mode = 'reel' | 'story' | 'carousel' | 'post'
 
-const REEL_HOOKS = [
+const DEFAULT_REEL_HOOKS = [
   'לא ידעת שזה גורם לכאב שלך 👇',
   'הטעות שכולם עושים בשיקום ❌',
   'למה הכאב חוזר? הסיבה האמיתית 🔍',
@@ -14,12 +14,12 @@ const REEL_HOOKS = [
   'הפיזיותרפיסט שלא מספרים לך 🤫',
   'Motion is lotion — מה זה אומר בפועל?',
 ]
-const STORY_HOOKS = [
+const DEFAULT_STORY_HOOKS = [
   'ידעת את זה? 🤔', 'שאלה: מה גורם לכאב שלך?',
   'טיפ מהיר לכאב גב 🙌', 'האם גם אתה עושה את זה? 👇',
   'הצביעו: כאב גב / כאב ברך',
 ]
-const CAROUSEL_TOPICS = [
+const DEFAULT_CAROUSEL_TOPICS = [
   'מיתוסים על כאב גב', 'למה מנוחה לא עוזרת',
   'שיקום נכון אחרי פציעת ספורט', 'תרגילים לחיזוק הגב', 'כיצד הגוף לומד כאב',
 ]
@@ -124,6 +124,10 @@ export default function SocialMediaPage() {
   const [publishing, setPublishing] = useState(false)
   const [published, setPublished] = useState(false)
   const [slideImages, setSlideImages] = useState<string[]>([])
+  const [reelHooks, setReelHooks] = useState<string[]>(DEFAULT_REEL_HOOKS)
+  const [storyHooks, setStoryHooks] = useState<string[]>(DEFAULT_STORY_HOOKS)
+  const [carouselTopics, setCarouselTopics] = useState<string[]>(DEFAULT_CAROUSEL_TOPICS)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [editableSlides, setEditableSlides] = useState<{headline: string, body: string}[]>([])
   const [generatingImages, setGeneratingImages] = useState(false)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([])
@@ -149,6 +153,33 @@ export default function SocialMediaPage() {
       setPublished(true); setTimeout(() => setPublished(false), 4000)
     } catch { alert('שגיאה בשליחה ל-Make') }
     setPublishing(false)
+  }
+
+  async function refreshSuggestions() {
+    setLoadingSuggestions(true)
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || ''
+      const prompt = mode === 'reel'
+        ? 'Generate 6 fresh Hebrew Instagram Reel hook ideas for a physiotherapy clinic (קליניקת יואב אבני, גילון). Each hook should be provocative, educational, short (up to 8 words). Return ONLY a JSON array of strings, no markdown: ["hook1","hook2","hook3","hook4","hook5","hook6"]'
+        : mode === 'story'
+        ? 'Generate 5 fresh Hebrew Instagram Story hook ideas for a physiotherapy clinic (קליניקת יואב אבני, גילון). Short, engaging, 2-5 words each. Return ONLY a JSON array: ["hook1","hook2","hook3","hook4","hook5"]'
+        : 'Generate 5 fresh Hebrew carousel topic ideas for a physiotherapy clinic (קליניקת יואב אבני, גילון). Educational topics about pain, rehab, sports. Return ONLY a JSON array: ["topic1","topic2","topic3","topic4","topic5"]'
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }),
+      })
+      const data = await res.json()
+      const text = data.content?.[0]?.text || ''
+      const start = text.indexOf('['); const end = text.lastIndexOf(']')
+      if (start !== -1 && end !== -1) {
+        const parsed = JSON.parse(text.substring(start, end + 1))
+        if (mode === 'reel') setReelHooks(parsed)
+        else if (mode === 'story') setStoryHooks(parsed)
+        else setCarouselTopics(parsed)
+      }
+    } catch { }
+    setLoadingSuggestions(false)
   }
 
   function buildPrompt(): string {
@@ -295,9 +326,14 @@ export default function SocialMediaPage() {
             </div>
             {(mode === 'reel' || mode === 'story') && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 רעיונות ל-Hook</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>💡 רעיונות ל-Hook</div>
+                  <button onClick={refreshSuggestions} disabled={loadingSuggestions} style={{ padding: '4px 10px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', color: '#0369a1', fontFamily: 'Heebo, sans-serif' }}>
+                    {loadingSuggestions ? '⏳' : '🔄 חדש'}
+                  </button>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {(mode === 'reel' ? REEL_HOOKS : STORY_HOOKS).map((h, i) => (
+                  {(mode === 'reel' ? reelHooks : storyHooks).map((h, i) => (
                     <div key={i} onClick={() => setTopic(prev => prev ? prev + '. ' + h : h)}
                       style={{ padding: '7px 10px', background: '#f8fafc', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: '#374151', border: '1px solid #e2e8f0' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
@@ -308,8 +344,13 @@ export default function SocialMediaPage() {
             )}
             {mode === 'carousel' && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', marginBottom: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase' }}>💡 נושאים מומלצים</div>
-                {CAROUSEL_TOPICS.map((t, i) => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>💡 נושאים מומלצים</div>
+                  <button onClick={refreshSuggestions} disabled={loadingSuggestions} style={{ padding: '4px 10px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', color: '#0369a1', fontFamily: 'Heebo, sans-serif' }}>
+                    {loadingSuggestions ? '⏳' : '🔄 חדש'}
+                  </button>
+                </div>
+                {carouselTopics.map((t, i) => (
                   <div key={i} onClick={() => setTopic(t)}
                     style={{ padding: '7px 10px', background: '#f8fafc', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', color: '#374151', border: '1px solid #e2e8f0', marginBottom: '5px' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
