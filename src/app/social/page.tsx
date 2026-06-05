@@ -76,12 +76,25 @@ async function drawSlide(canvas: HTMLCanvasElement, imageUrl: string, headline: 
     ctx.fillText(bLine, 1040, by)
   }
 
-  // לוגו
+  // לוגו עם רקע לבן שקוף לניגודיות
   await new Promise<void>((resolve) => {
     const logo = new Image(); logo.crossOrigin = 'anonymous'
     logo.onload = () => {
-      const logoH = 120; const logoW = (logo.width / logo.height) * logoH
-      ctx.drawImage(logo, 1080 - logoW - 40, 1080 - logoH - 40, logoW, logoH)
+      const logoH = 110; const logoW = (logo.width / logo.height) * logoH
+      const lx = 1080 - logoW - 40; const ly = 1080 - logoH - 40
+      // רקע לבן מעוגל מתחת ללוגו
+      ctx.save()
+      ctx.beginPath()
+      const pad = 14
+      const rx = lx - pad; const ry = ly - pad; const rw = logoW + pad * 2; const rh = logoH + pad * 2; const r = 16
+      ctx.moveTo(rx + r, ry); ctx.lineTo(rx + rw - r, ry); ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + r)
+      ctx.lineTo(rx + rw, ry + rh - r); ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - r, ry + rh)
+      ctx.lineTo(rx + r, ry + rh); ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - r)
+      ctx.lineTo(rx, ry + r); ctx.quadraticCurveTo(rx, ry, rx + r, ry); ctx.closePath()
+      ctx.fillStyle = 'rgba(255,255,255,0.92)'
+      ctx.fill()
+      ctx.restore()
+      ctx.drawImage(logo, lx, ly, logoW, logoH)
       resolve()
     }
     logo.onerror = () => resolve()
