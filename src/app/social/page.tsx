@@ -515,7 +515,7 @@ export default function SocialMediaPage() {
                         </div>
                       </div>
                       <div style={{ padding: '0' }}>
-                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: slideImages[i] ? 'block' : 'none' }} />
+                        <canvas ref={el => { canvasRefs.current[i] = el }} style={{ width: '100%', display: 'block' }} />
                         <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                           <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט על השקף</div>
                           <input
