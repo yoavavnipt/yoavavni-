@@ -2,20 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get('query') || 'physiotherapy'
-  const apiKey = process.env.UNSPLASH_ACCESS_KEY || ''
+  const apiKey = process.env.PEXELS_API_KEY || ''
 
   if (!apiKey) return NextResponse.json({ error: 'No key' }, { status: 400 })
 
   try {
     const res = await fetch(
-      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=squarish&client_id=${apiKey}`,
-      { headers: { 'Accept-Version': 'v1' } }
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5&orientation=square`,
+      { headers: { 'Authorization': apiKey } }
     )
     const data = await res.json()
-    const imageUrl = data.urls?.regular || ''
-    if (!imageUrl) return NextResponse.json({ url: '' })
+    const photos = data.photos || []
+    if (photos.length === 0) return NextResponse.json({ error: 'No photos' }, { status: 404 })
 
-    // מוריד את התמונה ומחזיר אותה דרך ה-server כדי להימנע מ-CORS
+    // בחר תמונה אקראית מהתוצאות
+    const photo = photos[Math.floor(Math.random() * photos.length)]
+    const imageUrl = photo.src?.large || photo.src?.medium || ''
+
+    // proxy את התמונה דרך ה-server
     const imgRes = await fetch(imageUrl)
     const imgBuffer = await imgRes.arrayBuffer()
     const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
