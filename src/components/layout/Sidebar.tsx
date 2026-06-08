@@ -23,6 +23,7 @@ export default function Sidebar() {
       { href: '/patients',      icon: '👥', label: 'מטופלים',          show: true },
       { href: '/organizations', icon: '🏆', label: 'ארגונים וקבוצות', show: true },
       { href: '/calendar',      icon: '📅', label: 'יומן תורים',       show: true },
+      { href: '/todo',          icon: '✅', label: 'משימות',           show: true },
     ]},
     { section: 'רפואי', items: [
       { href: '/slots',     icon: '🕐', label: 'שעות פתוחות',       show: true },
