@@ -2,6 +2,7 @@
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import NotificationBell from './NotificationBell'
+import AIAssistant from './AIAssistant'
 import { useEffect, useState } from 'react'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       {isMobile && <MobileNav />}
+      <AIAssistant />
     </div>
   )
 }
