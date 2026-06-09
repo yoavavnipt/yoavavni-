@@ -37,7 +37,8 @@ export default function Sidebar() {
       { href: '/messages',  icon: '💬', label: 'הודעות',           show: true },
       { href: '/whatsapp',  icon: '📲', label: 'WhatsApp',          show: true },
       { href: '/templates', icon: '✏️',  label: 'עריכת תבניות',   show: isAdmin },
-      { href: '/social',    icon: '📱', label: 'סושיאל מדיה',     show: canSocial },
+      { href: '/social',           icon: '📱', label: 'סושיאל מדיה',     show: canSocial },
+      { href: '/content-calendar', icon: '🗓️', label: 'לוח תוכן',          show: canSocial },
     ]},
     { section: 'ניהול', items: [
       { href: '/reports',     icon: '📈', label: 'דוחות',          show: isAdmin },
