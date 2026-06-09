@@ -33,7 +33,8 @@ export default function Sidebar() {
       { href: '/products',  icon: '🛒', label: 'מוצרים וכרטיסיות', show: isAdmin || isSecretary },
     ]},
     { section: 'תקשורת', items: [
-      { href: '/whatsapp',  icon: '💬', label: 'הודעות WhatsApp', show: true },
+      { href: '/messages',  icon: '💬', label: 'הודעות',           show: true },
+      { href: '/whatsapp',  icon: '📲', label: 'WhatsApp',          show: true },
       { href: '/templates', icon: '✏️',  label: 'עריכת תבניות',   show: isAdmin },
       { href: '/social',    icon: '📱', label: 'סושיאל מדיה',     show: canSocial },
     ]},
