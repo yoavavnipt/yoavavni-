@@ -189,9 +189,14 @@ export default function PatientProfilePage() {
     setAiLoading(true); setAiRec('')
     const prompt = `אתה פיזיותרפיסט מומחה. בהתבסס על הממצאים הבאים, תן המלצות קליניות מפורטות לתוכנית הטיפול.\n\nמטופל: ${patient?.first_name} ${patient?.last_name}\nאבחנה: ${patient?.diagnosis || intake?.doctor_diagnosis || 'לא צוינה'}\nאבחנה פיזיותרפיסט: ${intake?.pt_diagnosis || 'לא צוינה'}\nרקע רפואי: ${intake?.background || patient?.medical_history || 'לא צוין'}\nבעיות תפקודיות: ${intake?.functional_problems || 'לא צוינו'}\nתפקוד ADL: ${intake?.adl || 'לא צוין'}\nכוח שרירים: ${intake?.exam_strength || 'לא נבדק'}\nטווחי תנועה (ROM): ${intake?.exam_rom || 'לא נבדק'}\nטונוס: ${intake?.exam_tonus || 'לא נבדק'}\nתחושה: ${intake?.exam_sensation || 'לא נבדקה'}\nמטרות הטיפול: ${intake?.goals || 'לא הוגדרו'}\nתרופות: ${patient?.medications || 'לא'}\nאלרגיות: ${patient?.allergies || 'לא'}\n\nספק המלצות קליניות מובנות בעברית הכוללות:\n1. **אבחנה פיזיותרפית מומלצת**\n2. **יעדי טיפול מוצעים**\n3. **שיטות טיפול מומלצות**\n4. **תרגילים מומלצים**\n5. **תדירות טיפול מומלצת**\n6. **אזהרות / שיקולים מיוחדים**`
     try {
-      const res = await fetch('/api/ai-recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) })
+      const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY || ''
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 2000, messages: [{ role: 'user', content: prompt }] }),
+      })
       const data = await res.json()
-      setAiRec(data.text || 'לא הצלחנו לקבל המלצות')
+      setAiRec(data.content?.[0]?.text || 'לא הצלחנו לקבל המלצות')
     } catch { setAiRec('שגיאה בקבלת המלצות AI. נסה שוב.') }
     setAiLoading(false)
   }
@@ -268,7 +273,14 @@ export default function PatientProfilePage() {
               {patient.first_name?.[0]}{patient.last_name?.[0]}
             </div>
             <div>
-              <h1 style={{ fontSize:'22px', fontWeight:'800', color:'#1a3a5c' }}>{patient.first_name} {patient.last_name}</h1>
+              <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                <h1 style={{ fontSize:'22px', fontWeight:'800', color:'#1a3a5c' }}>{patient.first_name} {patient.last_name}</h1>
+                {patient.file_number && (
+                  <span style={{ background:'#f0f9ff', color:'#1a3a5c', padding:'2px 10px', borderRadius:'20px', fontSize:'12px', fontWeight:'700', border:'1px solid #bae6fd' }}>
+                    #{patient.file_number}
+                  </span>
+                )}
+              </div>
               <div style={{ display:'flex', gap:'10px', marginTop:'3px', fontSize:'12px', color:'#64748b', flexWrap:'wrap' }}>
                 {patient.phone && <a href={`tel:${patient.phone}`} style={{ color:'#1a3a5c', fontWeight:'600' }}>{patient.phone}</a>}
                 {fundingLabel && <span style={{ background:'#dbeafe', color:'#1e40af', padding:'1px 8px', borderRadius:'12px', fontWeight:'600' }}>💰 {fundingLabel}</span>}
@@ -313,7 +325,6 @@ export default function PatientProfilePage() {
             <div style={{ fontSize:'10px', color:'#94a3b8', marginTop:'2px' }}>
               {showVAT ? `ללא מע"מ: ₪${withoutVAT(totalPaid).toLocaleString()}` : `כולל מע"מ: ₪${totalPaid.toLocaleString()}`}
             </div>
-            {/* טוגל מע"מ */}
             <div style={{ display:'flex', gap:'4px', marginTop:'6px' }}>
               <button onClick={() => setShowVAT(true)} style={{ padding:'2px 6px', border:'none', borderRadius:'4px', fontSize:'9px', fontWeight: showVAT ? '700' : '400', background: showVAT ? '#0b8a5e' : '#f1f5f9', color: showVAT ? '#fff' : '#64748b', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>כולל מע"מ</button>
               <button onClick={() => setShowVAT(false)} style={{ padding:'2px 6px', border:'none', borderRadius:'4px', fontSize:'9px', fontWeight: !showVAT ? '700' : '400', background: !showVAT ? '#0b8a5e' : '#f1f5f9', color: !showVAT ? '#fff' : '#64748b', cursor:'pointer', fontFamily:'Heebo, sans-serif' }}>ללא מע"מ</button>
@@ -372,9 +383,16 @@ export default function PatientProfilePage() {
                   <div><label style={lbl}>תאריך לידה</label><input type="date" style={inp} value={form.date_of_birth||''} onChange={e=>set('date_of_birth',e.target.value)}/></div>
                   <div style={{gridColumn:'1/-1'}}><label style={lbl}>כתובת</label><input style={inp} value={form.address||''} onChange={e=>set('address',e.target.value)}/></div>
                   <div><label style={lbl}>עיר</label><input style={inp} value={form.city||''} onChange={e=>set('city',e.target.value)}/></div>
+                  <div style={{gridColumn:'1/-1'}}><label style={lbl}>מספר תיק</label><input style={{...inp,direction:'ltr'}} value={form.file_number||''} onChange={e=>set('file_number',e.target.value)} placeholder="PT-1000"/></div>
                 </div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+                  {patient.file_number && (
+                    <div style={{display:'flex',gap:'8px',fontSize:'13px'}}>
+                      <span style={{color:'#94a3b8',minWidth:'80px',flexShrink:0}}>מס׳ תיק</span>
+                      <span style={{fontWeight:'700',color:'#1a3a5c',background:'#f0f9ff',padding:'1px 10px',borderRadius:'20px',border:'1px solid #bae6fd'}}>{patient.file_number}</span>
+                    </div>
+                  )}
                   {[['שם',`${patient.first_name} ${patient.last_name}`],['ת.ז.',patient.id_number],['תאריך לידה',patient.date_of_birth?new Date(patient.date_of_birth).toLocaleDateString('he-IL'):null],['טלפון',patient.phone],['אימייל',patient.email],['כתובת',[patient.address,patient.city].filter(Boolean).join(', ')]].filter(([,v])=>v).map(([l,v])=>(
                     <div key={l as string} style={{display:'flex',gap:'8px',fontSize:'13px'}}><span style={{color:'#94a3b8',minWidth:'80px',flexShrink:0}}>{l}</span><span style={{fontWeight:'500',color:'#1e293b'}}>{v}</span></div>
                   ))}
