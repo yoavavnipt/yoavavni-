@@ -44,6 +44,113 @@ function GlobalSearch() {
   )
 }
 
+// הודעה קופצת עם דגשים לפתיחת היום
+function DailyBriefing({ appointments }: { appointments: any[] }) {
+  const [show, setShow] = useState(false)
+  const [briefing, setBriefing] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    // בדוק אם כבר הוצג היום
+    const today = new Date().toDateString()
+    const lastShown = localStorage.getItem('briefing_shown')
+    if (lastShown !== today && appointments.length > 0) {
+      loadBriefing()
+    }
+  }, [appointments])
+
+  async function loadBriefing() {
+    setLoading(true)
+    try {
+      // טען נתונים נוספים על המטופלים של היום
+      const patientIds = appointments.map(a => a.patient_id).filter(Boolean)
+      if (patientIds.length === 0) { setLoading(false); return }
+
+      const { data: patients } = await supabase.from('patients').select('id,first_name,last_name,diagnosis,allergies,medications,medical_history').in('id', patientIds)
+      const { data: pending } = await supabase.from('billing_records').select('patient_id,amount').eq('status', 'pending').in('patient_id', patientIds)
+
+      // בנה דגשים
+      const alerts: { type: string; icon: string; color: string; text: string }[] = []
+
+      // חובות תשלום
+      const debtMap: Record<string, number> = {}
+      ;(pending || []).forEach(b => { debtMap[b.patient_id] = (debtMap[b.patient_id] || 0) + b.amount })
+
+      appointments.forEach(appt => {
+        const patient = patients?.find(p => p.id === appt.patient_id)
+        if (!patient) return
+        const name = `${patient.first_name} ${patient.last_name}`
+        const time = appt.time?.slice(0, 5)
+
+        // חוב פתוח
+        if (debtMap[appt.patient_id]) {
+          alerts.push({ type: 'payment', icon: '💳', color: '#dc2626', text: `${name} (${time}) — חוב פתוח: ₪${debtMap[appt.patient_id].toLocaleString()}` })
+        }
+        // אלרגיות
+        if (patient.allergies) {
+          alerts.push({ type: 'medical', icon: '⚠️', color: '#e8a020', text: `${name} (${time}) — אלרגיה: ${patient.allergies}` })
+        }
+        // תרופות
+        if (patient.medications) {
+          alerts.push({ type: 'medical', icon: '💊', color: '#7c3aed', text: `${name} (${time}) — תרופות: ${patient.medications}` })
+        }
+        // אבחנה
+        if (patient.diagnosis) {
+          alerts.push({ type: 'clinical', icon: '🏥', color: '#1a3a5c', text: `${name} (${time}) — ${patient.diagnosis}` })
+        }
+      })
+
+      if (alerts.length > 0) {
+        setBriefing({ alerts, count: appointments.length, date: new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' }) })
+        setShow(true)
+        localStorage.setItem('briefing_shown', new Date().toDateString())
+      }
+    } catch (e) { console.error(e) }
+    setLoading(false)
+  }
+
+  function dismiss() { setShow(false); setDismissed(true) }
+
+  if (!show || dismissed || !briefing) return null
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+      <div style={{ background: '#fff', borderRadius: '20px', padding: '28px', maxWidth: '520px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', direction: 'rtl', maxHeight: '80vh', overflow: 'auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <div>
+            <div style={{ fontSize: '24px', marginBottom: '4px' }}>🌅</div>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c', margin: 0 }}>בוקר טוב, יואב!</h2>
+            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>{briefing.date} · {briefing.count} תורים היום</p>
+          </div>
+          <button onClick={dismiss} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        </div>
+
+        {/* דגשים */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: '#64748b', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            🚨 דגשים חשובים להיום
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {briefing.alerts.map((alert: any, i: number) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 14px', borderRadius: '10px', background: '#f8fafc', border: `1px solid ${alert.color}20` }}>
+                <span style={{ fontSize: '18px', flexShrink: 0 }}>{alert.icon}</span>
+                <span style={{ fontSize: '13px', color: '#374151', lineHeight: '1.5' }}>{alert.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* כפתור סגירה */}
+        <button onClick={dismiss} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, #1a3a5c, #1e4a7a)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+          הבנתי, מתחיל את היום! 💪
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState({ patients: 0, todayAppts: 0, monthIncome: 0, pending: 0 })
   const [appointments, setAppointments] = useState<any[]>([])
@@ -78,7 +185,6 @@ export default function DashboardPage() {
       setStats({ patients: patients || 0, todayAppts: todayAppts || 0, monthIncome, pending: pending || 0 })
       setAppointments(appts || [])
 
-      // קיבוץ חייבים
       const debtMap: Record<string, any> = {}
       ;(billingPending || []).forEach(b => {
         const pid = b.patient_id
@@ -103,8 +209,10 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
+      {/* הודעה קופצת עם דגשים */}
+      <DailyBriefing appointments={appointments} />
+
       <div style={{ padding: '20px 24px' }} className="fade-in">
-        {/* Header */}
         <div style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
             <div>
@@ -114,7 +222,6 @@ export default function DashboardPage() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              {/* טוגל מע"מ */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>הכנסות:</span>
                 <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
@@ -127,47 +234,33 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* KPIs — ניתנים ללחיצה */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '20px' }}>
           <Link href="/patients?filter=active" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #1e4a7a', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
+            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #1e4a7a', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
               <div style={{ fontSize: '22px', marginBottom: '8px' }}>👥</div>
               <div style={{ fontSize: '24px', fontWeight: '800', color: '#1a3a5c' }}>{stats.patients}</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>מטופלים פעילים</div>
               <div style={{ fontSize: '10px', color: '#3eb8e5', marginTop: '2px', fontWeight: '600' }}>לחץ לצפייה ←</div>
             </div>
           </Link>
-
           <Link href="/calendar" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #3eb8e5', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
+            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #3eb8e5', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
               <div style={{ fontSize: '22px', marginBottom: '8px' }}>📅</div>
               <div style={{ fontSize: '24px', fontWeight: '800', color: '#1a3a5c' }}>{stats.todayAppts}</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>תורים היום</div>
               <div style={{ fontSize: '10px', color: '#3eb8e5', marginTop: '2px', fontWeight: '600' }}>{new Date().toLocaleDateString('he-IL', { weekday: 'long' })} ←</div>
             </div>
           </Link>
-
           <Link href="/billing" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #0b8a5e', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
+            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #0b8a5e', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
               <div style={{ fontSize: '22px', marginBottom: '8px' }}>💰</div>
               <div style={{ fontSize: '24px', fontWeight: '800', color: '#1a3a5c' }}>₪{displayIncome.toLocaleString()}</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>הכנסה החודש</div>
-              <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
-                {showVAT ? `ללא מע"מ: ₪${withoutVAT(stats.monthIncome).toLocaleString()}` : `כולל מע"מ: ₪${stats.monthIncome.toLocaleString()}`}
-              </div>
+              <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>{showVAT ? `ללא מע"מ: ₪${withoutVAT(stats.monthIncome).toLocaleString()}` : `כולל מע"מ: ₪${stats.monthIncome.toLocaleString()}`}</div>
             </div>
           </Link>
-
           <Link href="/calendar?filter=pending" style={{ textDecoration: 'none' }}>
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #e8a020', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
+            <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', borderRight: '3px solid #e8a020', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'box-shadow 0.15s' }} onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)')} onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)')}>
               <div style={{ fontSize: '22px', marginBottom: '8px' }}>⏳</div>
               <div style={{ fontSize: '24px', fontWeight: '800', color: '#1a3a5c' }}>{stats.pending}</div>
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>ממתינים לאישור</div>
@@ -176,7 +269,6 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Quick Actions */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px', marginBottom: '20px' }}>
           {quickActions.map(a => (
             <Link key={a.label} href={a.href} style={{ background: '#fff', borderRadius: '10px', padding: '14px', textAlign: 'center', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', display: 'block', color: '#1e293b' }}>
@@ -187,48 +279,33 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          {/* תורים היום */}
           <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c' }}>📅 תורים היום</div>
               <Link href="/calendar" style={{ fontSize: '12px', color: '#3eb8e5', fontWeight: '600' }}>הצג הכל ←</Link>
             </div>
             {appointments.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div>
-                <div>אין תורים להיום</div>
-              </div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><div style={{ fontSize: '32px', marginBottom: '8px' }}>📅</div><div>אין תורים להיום</div></div>
             ) : appointments.map((a, i) => (
               <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', borderBottom: i < appointments.length - 1 ? '1px solid #f8fafc' : 'none', background: i % 2 === 0 ? '#fff' : '#fafcff' }}>
                 <div style={{ fontWeight: '700', color: '#1a3a5c', fontSize: '14px', minWidth: '52px' }}>{a.time?.slice(0, 5)}</div>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: a.service?.color ? `${a.service.color}20` : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
-                  {a.service?.icon || '🏥'}
-                </div>
+                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: a.service?.color ? `${a.service.color}20` : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>{a.service?.icon || '🏥'}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link href={`/patients/${a.patient_id}`} style={{ fontWeight: '600', fontSize: '13px', color: '#1a3a5c', textDecoration: 'none' }}>
-                    {a.patient?.first_name} {a.patient?.last_name}
-                  </Link>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>
-                    {a.service?.name_he || 'טיפול'}
-                    {a.patient?.phone && <a href={`https://wa.me/972${a.patient.phone.replace(/^0/, '').replace(/-/g, '')}`} target="_blank" rel="noreferrer" style={{ marginRight: '8px', color: '#25d366', fontWeight: '600' }}>WA</a>}
-                  </div>
+                  <Link href={`/patients/${a.patient_id}`} style={{ fontWeight: '600', fontSize: '13px', color: '#1a3a5c', textDecoration: 'none' }}>{a.patient?.first_name} {a.patient?.last_name}</Link>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>{a.service?.name_he || 'טיפול'}{a.patient?.phone && <a href={`https://wa.me/972${a.patient.phone.replace(/^0/, '').replace(/-/g, '')}`} target="_blank" rel="noreferrer" style={{ marginRight: '8px', color: '#25d366', fontWeight: '600' }}>WA</a>}</div>
                 </div>
                 <StatusBadge status={a.status} />
               </div>
             ))}
           </div>
 
-          {/* חייבים */}
           <div style={{ background: '#fff', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: '700', fontSize: '14px', color: '#dc2626' }}>💸 חובות פתוחים</div>
               <Link href="/billing?filter=pending" style={{ fontSize: '12px', color: '#3eb8e5', fontWeight: '600' }}>הצג הכל ←</Link>
             </div>
             {debtors.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div>
-                <div>אין חובות פתוחים</div>
-              </div>
+              <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}><div style={{ fontSize: '32px', marginBottom: '8px' }}>🎉</div><div>אין חובות פתוחים</div></div>
             ) : debtors.map((d, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', borderBottom: i < debtors.length - 1 ? '1px solid #f8fafc' : 'none' }}>
                 <div style={{ flex: 1 }}>
@@ -239,12 +316,7 @@ export default function DashboardPage() {
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>₪{(showVAT ? d.total : withoutVAT(d.total)).toLocaleString()}</div>
                   <div style={{ fontSize: '10px', color: '#94a3b8' }}>{showVAT ? `ללא מע"מ: ₪${withoutVAT(d.total).toLocaleString()}` : `כולל: ₪${d.total.toLocaleString()}`}</div>
                 </div>
-                {d.phone && (
-                  <a href={`https://wa.me/972${d.phone.replace(/^0/,'').replace(/-/g,'')}`} target="_blank" rel="noreferrer"
-                    style={{ padding: '5px 10px', background: '#25d366', color: '#fff', borderRadius: '6px', fontSize: '11px', fontWeight: '600', textDecoration: 'none' }}>
-                    💬 WA
-                  </a>
-                )}
+                {d.phone && <a href={`https://wa.me/972${d.phone.replace(/^0/,'').replace(/-/g,'')}`} target="_blank" rel="noreferrer" style={{ padding: '5px 10px', background: '#25d366', color: '#fff', borderRadius: '6px', fontSize: '11px', fontWeight: '600', textDecoration: 'none' }}>💬 WA</a>}
               </div>
             ))}
           </div>
