@@ -19,7 +19,7 @@ type Sub = {
   patient?: { first_name: string; last_name: string; phone: string }
 }
 
-const PLANS = [
+const PLANS: { name: string; type: string; price: number; sessions?: number }[] = [
   { name: 'ריצה היברידית', type: 'monthly', price: 650 },
   { name: 'קבוצת ריצה היברידית', type: 'monthly', price: 1000 },
   { name: 'ריצה פרימיום', type: 'monthly', price: 1500 },
