@@ -20,12 +20,10 @@ type Sub = {
 }
 
 const PLANS = [
-  { name: 'היברידי', type: 'monthly', price: 480 },
-  { name: 'היברידי + קבוצת ריצה', type: 'monthly', price: 650 },
-  { name: 'היברידי + קבוצת ריצה + 2 טיפולי התאוששות', type: 'monthly', price: 900 },
-  { name: 'אימון קבוצתי (2-3 מתאמנים)', type: 'monthly', price: 380 },
-  { name: 'כרטיסייה 10 טיפולים', type: 'card', price: 3150, sessions: 10 },
-  { name: 'כרטיסייה 5 טיפולים', type: 'card', price: 1650, sessions: 5 },
+  { name: 'ריצה היברידית', type: 'monthly', price: 650 },
+  { name: 'קבוצת ריצה היברידית', type: 'monthly', price: 1000 },
+  { name: 'ריצה פרימיום', type: 'monthly', price: 1500 },
+  { name: 'אימון קבוצתי (2-3 מתאמנים)', type: 'monthly', price: 1180 },
 ]
 
 export default function SubscriptionsPage() {
