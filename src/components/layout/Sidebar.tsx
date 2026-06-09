@@ -30,7 +30,8 @@ export default function Sidebar() {
       { href: '/billing',   icon: '💰', label: 'חיוב וקבלות',       show: isAdmin || isSecretary },
       { href: '/expenses',  icon: '💸', label: 'הוצאות',             show: isAdmin },
       { href: '/videos',    icon: '🎬', label: 'מאגר סרטונים',      show: true },
-      { href: '/products',  icon: '🛒', label: 'מוצרים וכרטיסיות', show: isAdmin || isSecretary },
+      { href: '/products',      icon: '🛒', label: 'מוצרים וכרטיסיות', show: isAdmin || isSecretary },
+      { href: '/subscriptions', icon: '🎫', label: 'מנויים וכרטיסיות',  show: isAdmin || isSecretary },
     ]},
     { section: 'תקשורת', items: [
       { href: '/messages',  icon: '💬', label: 'הודעות',           show: true },
