@@ -44,8 +44,24 @@ async function fetchUnsplashImage(query: string): Promise<string> {
   try { return `/api/unsplash?query=${encodeURIComponent(query)}&t=${Date.now()}` } catch { return '' }
 }
 
+// שליפת תמונת Pexels אמיתית לפרסום באינסטגרם
+async function fetchPexelsImageUrl(query: string): Promise<string> {
+  try {
+    const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
+    if (!pexelsKey) return 'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg'
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
+      headers: { Authorization: pexelsKey }
+    })
+    const data = await res.json()
+    if (data.photos && data.photos.length > 0) {
+      const idx = Math.floor(Math.random() * Math.min(5, data.photos.length))
+      return data.photos[idx].src.large
+    }
+  } catch {}
+  return 'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg'
+}
+
 export default function SocialMediaPage() {
-  // יצירת תוכן
   const [video, setVideo] = useState<File | null>(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [mode, setMode] = useState<Mode>('reel')
@@ -65,7 +81,6 @@ export default function SocialMediaPage() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false)
   const [editableSlides, setEditableSlides] = useState<{headline: string, body: string}[]>([])
   const [generatingImages, setGeneratingImages] = useState(false)
-  // לוח תוכן
   const [mainTab, setMainTab] = useState<MainTab>('create')
   const [calPosts, setCalPosts] = useState<any[]>([])
   const [calLoading, setCalLoading] = useState(false)
@@ -104,12 +119,28 @@ export default function SocialMediaPage() {
     setCalPosts(prev => prev.map(p => p.id === id ? { ...p, status } : p))
   }
 
+  // שולח ל-Make עם תמונת Pexels אוטומטית
   async function publishCalToMake(post: any) {
     setCalPublishing(post.id)
     try {
-      await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: post.content_type, caption: `${post.caption}\n\n${post.hashtags}`, title: post.title, image_url: '', scheduled_date: post.scheduled_date, scheduled_time: post.scheduled_time, platform: post.platform }) })
+      // שלוף תמונה מ-Pexels לפי נושא הפוסט
+      const imageUrl = await fetchPexelsImageUrl(post.title || 'physiotherapy')
+      await fetch(MAKE_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: post.content_type,
+          caption: `${post.caption}\n\n${post.hashtags}`,
+          title: post.title,
+          image_url: imageUrl,
+          scheduled_date: post.scheduled_date,
+          scheduled_time: post.scheduled_time,
+          platform: post.platform
+        })
+      })
       await supabase.from('content_calendar').update({ status: 'published' }).eq('id', post.id)
       setCalPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'published' } : p))
+      await supabase.from('notifications').insert({ type: 'system', title: '🚀 פורסם באינסטגרם', body: post.title, link: '/social' })
     } catch { alert('שגיאה בשליחה ל-Make') }
     setCalPublishing(null)
   }
@@ -135,9 +166,19 @@ export default function SocialMediaPage() {
   }
   function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }
   function downloadSRT(srt: string) { const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'captions.srt'; a.click(); URL.revokeObjectURL(url) }
+
+  // שולח ל-Make עם תמונת Pexels אוטומטית
   async function publishToMake(caption: string) {
     setPublishing(true); setPublished(false)
-    try { await fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: mode, caption, topic, image_url: '' }) }); setPublished(true); setTimeout(() => setPublished(false), 4000) } catch { alert('שגיאה') }
+    try {
+      const imageUrl = await fetchPexelsImageUrl(topic || 'physiotherapy')
+      await fetch(MAKE_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: mode, caption, topic, image_url: imageUrl })
+      })
+      setPublished(true); setTimeout(() => setPublished(false), 4000)
+    } catch { alert('שגיאה') }
     setPublishing(false)
   }
 
@@ -188,7 +229,6 @@ export default function SocialMediaPage() {
     setLoading(false)
   }
 
-  // שמור תוצאה ללוח תוכן
   async function saveToCalendar() {
     if (!result) return
     const caption = result.caption || ''
@@ -217,17 +257,13 @@ export default function SocialMediaPage() {
   return (
     <AppLayout>
       <div style={{ padding: '20px 24px', direction: 'rtl' }} className="fade-in">
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#1a3a5c' }}>📱 שיווק סושיאל מדיה</h1>
             <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>AI מכין תוכן + לוח תזמון בסגנון YOAVAVNI</p>
           </div>
-          {/* טאבים ראשיים */}
           <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <button onClick={() => setMainTab('create')} style={{ padding: '10px 20px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: mainTab === 'create' ? '700' : '400', background: mainTab === 'create' ? '#1a3a5c' : 'transparent', color: mainTab === 'create' ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>
-              ✨ צור תוכן
-            </button>
+            <button onClick={() => setMainTab('create')} style={{ padding: '10px 20px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: mainTab === 'create' ? '700' : '400', background: mainTab === 'create' ? '#1a3a5c' : 'transparent', color: mainTab === 'create' ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif' }}>✨ צור תוכן</button>
             <button onClick={() => setMainTab('calendar')} style={{ padding: '10px 20px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: mainTab === 'calendar' ? '700' : '400', background: mainTab === 'calendar' ? '#1a3a5c' : 'transparent', color: mainTab === 'calendar' ? '#fff' : '#64748b', fontFamily: 'Heebo, sans-serif', position: 'relative' }}>
               📅 לוח תוכן
               {pendingApproval > 0 && <span style={{ position: 'absolute', top: '6px', right: '6px', background: '#dc2626', color: '#fff', borderRadius: '50%', width: '16px', height: '16px', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700' }}>{pendingApproval}</span>}
@@ -235,7 +271,6 @@ export default function SocialMediaPage() {
           </div>
         </div>
 
-        {/* ===== טאב יצירת תוכן ===== */}
         {mainTab === 'create' && (
           <>
             <div style={{ display: 'flex', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '16px' }}>
@@ -400,7 +435,6 @@ export default function SocialMediaPage() {
           </>
         )}
 
-        {/* ===== טאב לוח תוכן ===== */}
         {mainTab === 'calendar' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
