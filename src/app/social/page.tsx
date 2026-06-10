@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const MAKE_WEBHOOK = 'https://hook.eu1.make.com/wl7puq7yr9wj39p7as225gut62t5911v'
-const UNSPLASH_KEY = ''
+const UNSPLASH_KEY = 'pexels'
 type Mode = 'reel' | 'story' | 'carousel' | 'post'
 type MainTab = 'create' | 'calendar'
 
@@ -41,7 +41,19 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
 
 async function fetchUnsplashImage(query: string): Promise<string> {
-  try { return `/api/unsplash?query=${encodeURIComponent(query)}&t=${Date.now()}` } catch { return '' }
+  try {
+    const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
+    if (!pexelsKey) return ''
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
+      headers: { Authorization: pexelsKey }
+    })
+    const data = await res.json()
+    if (data.photos && data.photos.length > 0) {
+      const idx = Math.floor(Math.random() * Math.min(5, data.photos.length))
+      return data.photos[idx].src.large
+    }
+    return ''
+  } catch { return '' }
 }
 
 // שליפת תמונת Pexels אמיתית לפרסום באינסטגרם
