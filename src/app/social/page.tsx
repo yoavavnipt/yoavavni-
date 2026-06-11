@@ -1,4 +1,5 @@
 'use client'
+// v2 - pexels images
 import AppLayout from '@/components/layout/AppLayout'
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
