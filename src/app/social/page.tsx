@@ -45,7 +45,7 @@ async function fetchUnsplashImage(query: string): Promise<string> {
   try {
     const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
     if (!pexelsKey) return ''
-    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy bright')}&per_page=5&orientation=square`, {
       headers: { Authorization: pexelsKey }
     })
     const data = await res.json()
@@ -62,7 +62,7 @@ async function fetchPexelsImageUrl(query: string): Promise<string> {
   try {
     const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
     if (!pexelsKey) return 'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg'
-    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy bright')}&per_page=5&orientation=square`, {
       headers: { Authorization: pexelsKey }
     })
     const data = await res.json()
@@ -424,13 +424,13 @@ export default function SocialMediaPage() {
                           </div>
                           <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', background: '#1a3a5c' }}>
                             {slideImages[i] && <img src={slideImages[i]} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
-                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(26,58,92,0.68)' }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(26,58,92,0.55)' }} />
                             <div style={{ position: 'absolute', top: '12px', right: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', fontWeight: '700' }}>{i+1}/{result.slides.length}</div>
                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '90%', textAlign: 'center', direction: 'rtl' }}>
                               <div style={{ color: '#fff', fontSize: 'clamp(16px,3vw,28px)', fontWeight: '900', lineHeight: '1.3', textShadow: '0 2px 8px rgba(0,0,0,0.5)', marginBottom: '12px' }}>{editableSlides[i]?.headline || slide.headline}</div>
                               {(editableSlides[i]?.body || slide.body) && <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(12px,2vw,18px)', lineHeight: '1.5', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{editableSlides[i]?.body || slide.body}</div>}
                             </div>
-                            <div style={{ position: 'absolute', bottom: '12px', left: '16px', background: 'rgba(255,255,255,0.92)', borderRadius: '10px', padding: '6px 10px' }}><img src="/logo.png" alt="logo" style={{ height: '36px', display: 'block' }} /></div>
+                            <div style={{ position: 'absolute', bottom: '12px', left: '16px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6)) brightness(10)' }}><img src="/logo.png" alt="logo" style={{ height: '40px', display: 'block' }} /></div>
                           </div>
                           <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                             <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט</div>
