@@ -102,6 +102,10 @@ export default function SocialMediaPage() {
   const [showCalForm, setShowCalForm] = useState(false)
   const [calSaving, setCalSaving] = useState(false)
   const [calPublishing, setCalPublishing] = useState<string | null>(null)
+  const [showScheduleForm, setShowScheduleForm] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0])
+  const [scheduleTime, setScheduleTime] = useState('09:00')
+  const [scheduleSaving, setScheduleSaving] = useState(false)
   const [calForm, setCalForm] = useState({
     title: '', content_type: 'post', platform: 'instagram',
     caption: '', hashtags: '', scheduled_date: new Date().toISOString().split('T')[0],
@@ -267,8 +271,42 @@ export default function SocialMediaPage() {
 
   const pendingApproval = calPosts.filter(p => p.status === 'draft').length
 
+  // מודל תזמון
+  const ScheduleModal = () => !showScheduleForm ? null : (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
+      <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%', direction: 'rtl' }}>
+        <div style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c', marginBottom: '4px' }}>📅 תזמן פרסום</div>
+        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>בחר מתי לפרסם את הפוסט</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>תאריך</label>
+            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>שעה</label>
+            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+        </div>
+        <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '12px', color: '#64748b' }}>
+          💡 לאחר השמירה — לך ללוח תוכן, אשר את הפוסט ולחץ 🚀 פרסם
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setShowScheduleForm(false)}
+            style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>ביטול</button>
+          <button onClick={confirmSaveToCalendar} disabled={scheduleSaving}
+            style={{ flex: 2, padding: '10px', background: scheduleSaving ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+            {scheduleSaving ? '⏳ שומר...' : '✅ שמור ללוח'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <AppLayout>
+      <ScheduleModal />
       <div style={{ padding: '20px 24px', direction: 'rtl' }} className="fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
