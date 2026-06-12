@@ -45,7 +45,7 @@ async function fetchUnsplashImage(query: string): Promise<string> {
   try {
     const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
     if (!pexelsKey) return ''
-    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy bright')}&per_page=5&orientation=square`, {
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
       headers: { Authorization: pexelsKey }
     })
     const data = await res.json()
@@ -62,7 +62,7 @@ async function fetchPexelsImageUrl(query: string): Promise<string> {
   try {
     const pexelsKey = process.env.NEXT_PUBLIC_PEXELS_API_KEY || ''
     if (!pexelsKey) return 'https://images.pexels.com/photos/7579831/pexels-photo-7579831.jpeg'
-    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy bright')}&per_page=5&orientation=square`, {
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query + ' physiotherapy')}&per_page=5&orientation=square`, {
       headers: { Authorization: pexelsKey }
     })
     const data = await res.json()
@@ -102,10 +102,6 @@ export default function SocialMediaPage() {
   const [showCalForm, setShowCalForm] = useState(false)
   const [calSaving, setCalSaving] = useState(false)
   const [calPublishing, setCalPublishing] = useState<string | null>(null)
-  const [showScheduleForm, setShowScheduleForm] = useState(false)
-  const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0])
-  const [scheduleTime, setScheduleTime] = useState('09:00')
-  const [scheduleSaving, setScheduleSaving] = useState(false)
   const [calForm, setCalForm] = useState({
     title: '', content_type: 'post', platform: 'instagram',
     caption: '', hashtags: '', scheduled_date: new Date().toISOString().split('T')[0],
@@ -271,42 +267,8 @@ export default function SocialMediaPage() {
 
   const pendingApproval = calPosts.filter(p => p.status === 'draft').length
 
-  // מודל תזמון
-  const ScheduleModal = () => !showScheduleForm ? null : (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%', direction: 'rtl' }}>
-        <div style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c', marginBottom: '4px' }}>📅 תזמן פרסום</div>
-        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>בחר מתי לפרסם את הפוסט</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>תאריך</label>
-            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>שעה</label>
-            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-        </div>
-        <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '12px', color: '#64748b' }}>
-          💡 לאחר השמירה — לך ללוח תוכן, אשר את הפוסט ולחץ 🚀 פרסם
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowScheduleForm(false)}
-            style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>ביטול</button>
-          <button onClick={confirmSaveToCalendar} disabled={scheduleSaving}
-            style={{ flex: 2, padding: '10px', background: scheduleSaving ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-            {scheduleSaving ? '⏳ שומר...' : '✅ שמור ללוח'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <AppLayout>
-      <ScheduleModal />
       <div style={{ padding: '20px 24px', direction: 'rtl' }} className="fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
@@ -462,13 +424,13 @@ export default function SocialMediaPage() {
                           </div>
                           <div style={{ position: 'relative', width: '100%', paddingBottom: '100%', background: '#1a3a5c' }}>
                             {slideImages[i] && <img src={slideImages[i]} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
-                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(26,58,92,0.55)' }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(26,58,92,0.68)' }} />
                             <div style={{ position: 'absolute', top: '12px', right: '16px', color: 'rgba(255,255,255,0.5)', fontSize: '14px', fontWeight: '700' }}>{i+1}/{result.slides.length}</div>
                             <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '90%', textAlign: 'center', direction: 'rtl' }}>
                               <div style={{ color: '#fff', fontSize: 'clamp(16px,3vw,28px)', fontWeight: '900', lineHeight: '1.3', textShadow: '0 2px 8px rgba(0,0,0,0.5)', marginBottom: '12px' }}>{editableSlides[i]?.headline || slide.headline}</div>
                               {(editableSlides[i]?.body || slide.body) && <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 'clamp(12px,2vw,18px)', lineHeight: '1.5', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{editableSlides[i]?.body || slide.body}</div>}
                             </div>
-                            <div style={{ position: 'absolute', bottom: '12px', left: '16px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6)) brightness(10)' }}><img src="/logo.png" alt="logo" style={{ height: '40px', display: 'block' }} /></div>
+                            <div style={{ position: 'absolute', bottom: '12px', left: '16px', background: 'rgba(255,255,255,0.92)', borderRadius: '10px', padding: '6px 10px' }}><img src="/logo.png" alt="logo" style={{ height: '36px', display: 'block' }} /></div>
                           </div>
                           <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                             <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>✏️ ערוך טקסט</div>
