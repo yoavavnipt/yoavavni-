@@ -102,10 +102,7 @@ export default function SocialMediaPage() {
   const [showCalForm, setShowCalForm] = useState(false)
   const [calSaving, setCalSaving] = useState(false)
   const [calPublishing, setCalPublishing] = useState<string | null>(null)
-  const [showScheduleForm, setShowScheduleForm] = useState(false)
-  const [scheduleDate, setScheduleDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0])
-  const [scheduleTime, setScheduleTime] = useState('09:00')
-  const [scheduleSaving, setScheduleSaving] = useState(false)
+
   const [calForm, setCalForm] = useState({
     title: '', content_type: 'post', platform: 'instagram',
     caption: '', hashtags: '', scheduled_date: new Date().toISOString().split('T')[0],
@@ -271,42 +268,10 @@ export default function SocialMediaPage() {
 
   const pendingApproval = calPosts.filter(p => p.status === 'draft').length
 
-  // מודל תזמון
-  const ScheduleModal = () => !showScheduleForm ? null : (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}>
-      <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%', direction: 'rtl' }}>
-        <div style={{ fontSize: '18px', fontWeight: '800', color: '#1a3a5c', marginBottom: '4px' }}>📅 תזמן פרסום</div>
-        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>בחר מתי לפרסם את הפוסט</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>תאריך</label>
-            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <div>
-            <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>שעה</label>
-            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-        </div>
-        <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '10px 12px', marginBottom: '16px', fontSize: '12px', color: '#64748b' }}>
-          💡 לאחר השמירה — לך ללוח תוכן, אשר את הפוסט ולחץ 🚀 פרסם
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setShowScheduleForm(false)}
-            style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '13px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>ביטול</button>
-          <button onClick={confirmSaveToCalendar} disabled={scheduleSaving}
-            style={{ flex: 2, padding: '10px', background: scheduleSaving ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-            {scheduleSaving ? '⏳ שומר...' : '✅ שמור ללוח'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+
 
   return (
     <AppLayout>
-      <ScheduleModal />
       <div style={{ padding: '20px 24px', direction: 'rtl' }} className="fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
@@ -424,23 +389,10 @@ export default function SocialMediaPage() {
                       {result.hashtags && <div style={{ background: '#fff', borderRadius: '12px', padding: '14px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>🏷️ האשטאגים</div><CopyBtn text={result.hashtags} k="hashtags" /></div><div style={{ fontSize: '12px', color: '#3b82f6', lineHeight: '1.8' }}>{result.hashtags}</div></div>}
                       {(result.music_mood || result.best_time) && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>{result.music_mood && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>🎵 מוזיקה</div><div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.music_mood}</div></div>}{result.best_time && <div style={{ background: '#fff', borderRadius: '12px', padding: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '4px' }}>⏰ זמן פרסום</div><div style={{ fontSize: '12px', fontWeight: '600', color: '#1a3a5c' }}>{result.best_time}</div></div>}</div>}
                       {result.tips && <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', borderRadius: '12px', padding: '14px', border: '1px solid #bbf7d0' }}><div style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', marginBottom: '8px' }}>💡 טיפים</div>{result.tips.map((tip: string, i: number) => (<div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '5px', fontSize: '12px', color: '#374151' }}><span style={{ color: '#0b8a5e', fontWeight: '700' }}>{i + 1}.</span><span>{tip}</span></div>))}</div>}
-                      {/* תזמון מהיר */}
-                      {showQuickSchedule && (
-                        <div style={{ background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', borderRadius: '12px', padding: '14px', border: '1px solid #bae6fd' }}>
-                          <div style={{ fontSize: '13px', fontWeight: '700', color: '#1a3a5c', marginBottom: '10px' }}>📅 מתי לפרסם?</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                            <input type="date" value={qDate} onChange={e => setQDate(e.target.value)} style={{ padding: '8px', border: '1.5px solid #bae6fd', borderRadius: '8px', fontSize: '13px', outline: 'none' }} />
-                            <input type="time" value={qTime} onChange={e => setQTime(e.target.value)} style={{ padding: '8px', border: '1.5px solid #bae6fd', borderRadius: '8px', fontSize: '13px', outline: 'none' }} />
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            <button onClick={() => setShowQuickSchedule(false)} style={{ padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', fontSize: '12px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>ביטול</button>
-                            <button onClick={quickScheduleAndPublish} disabled={qSaving} style={{ padding: '10px', background: qSaving ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>{qSaving ? '⏳ שולח...' : '🚀 תזמן ופרסם'}</button>
-                          </div>
-                        </div>
-                      )}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                         <button onClick={() => copy(`${result.hook || result.headline || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`, 'all')} style={{ padding: '11px', background: copiedKey === 'all' ? '#0b8a5e' : '#25d366', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>{copiedKey === 'all' ? '✅ הועתק!' : '📋 העתק הכל'}</button>
-                        <button onClick={() => setShowQuickSchedule(!showQuickSchedule)} style={{ padding: '11px', background: showQuickSchedule ? '#1a3a5c' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: '800', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>📅 תזמן ופרסם</button>
+                        <button onClick={saveToCalendar} style={{ padding: '11px', background: '#f0f9ff', color: '#1a3a5c', border: '1px solid #bae6fd', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>📅 שמור ללוח</button>
+                        <button onClick={() => publishToMake(`${result.hook || result.headline || ''}\n\n${result.caption || ''}\n\n${result.cta || ''}\n\n${result.hashtags || ''}`)} disabled={publishing} style={{ padding: '11px', background: published ? '#0b8a5e' : publishing ? '#94a3b8' : 'linear-gradient(135deg, #E1306C, #833AB4)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: '800', cursor: publishing ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>{published ? '✅ נשלח!' : publishing ? '⏳' : '📤 שלח ל-Make'}</button>
                       </div>
                     </div>
                   )}
