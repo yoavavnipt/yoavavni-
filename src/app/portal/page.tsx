@@ -40,6 +40,7 @@ export default function PortalPage() {
   const [bookingSlot, setBookingSlot] = useState<any>(null)
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [totalDebt, setTotalDebt] = useState(0)
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('')
 
   useEffect(() => {
     const savedPatient = sessionStorage.getItem('portal_patient')
@@ -71,8 +72,6 @@ export default function PortalPage() {
     const { data: vas } = await supabase.from('treatment_records').select('vas_score,created_at').eq('patient_id', patientId).order('created_at').limit(20)
     setVasData((vas || []).filter((v: any) => v.vas_score !== null))
   }
-
-  const [selectedServiceType, setSelectedServiceType] = useState<string>('')
 
   // מיפוי סוג שירות לתצוגה למטופל (ללא תמחור)
   const SERVICE_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
