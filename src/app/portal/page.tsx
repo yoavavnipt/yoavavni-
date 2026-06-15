@@ -72,13 +72,41 @@ export default function PortalPage() {
     setVasData((vas || []).filter((v: any) => v.vas_score !== null))
   }
 
+  const [selectedServiceType, setSelectedServiceType] = useState<string>('')
+
+  // מיפוי סוג שירות לתצוגה למטופל (ללא תמחור)
+  const SERVICE_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
+    'clinic_private':  { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+    'clinic_reduced':  { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+    'clinic_sports':   { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+    'hydro':           { label: 'פיזיותרפיה במים',  icon: '🏊' },
+    'home_visit':      { label: 'ביקור בית',          icon: '🏠' },
+    'hybrid':          { label: 'טיפול היברידי',      icon: '🔄' },
+  }
+
+  // קבע אילו slot_types המטופל יכול לראות לפי סוג המימון שלו
+  function getAllowedSlotTypes(patient: any): string[] {
+    const funding = patient?.funding_type || 'private'
+    if (funding === 'private') return ['clinic_private', 'hydro', 'home_visit', 'hybrid']
+    if (funding === 'sports') return ['clinic_sports', 'hydro', 'home_visit', 'hybrid']
+    if (['clalit','maccabi','meuhedet','leumit'].includes(funding)) return ['clinic_reduced', 'hydro', 'home_visit', 'hybrid']
+    return ['clinic_private', 'hydro', 'home_visit', 'hybrid']
+  }
+
   async function loadAvailableSlots(date: string) {
-    if (!date) return
-    const { data } = await supabase.from('availability').select('*').eq('date', date).eq('is_available', true).order('start_time')
+    if (!date || !patient) return
+    const allowedTypes = getAllowedSlotTypes(patient)
+    const { data } = await supabase
+      .from('available_slots')
+      .select('*')
+      .eq('date', date)
+      .eq('status', 'open')
+      .in('slot_type', allowedTypes)
+      .order('time')
     // סנן תורים תפוסים
     const { data: booked } = await supabase.from('appointments').select('time').eq('date', date)
     const bookedTimes = (booked || []).map((b: any) => b.time)
-    setAvailableSlots((data || []).filter((s: any) => !bookedTimes.includes(s.start_time)))
+    setAvailableSlots((data || []).filter((s: any) => !bookedTimes.includes(s.time)))
   }
 
   async function bookAppointment() {
@@ -86,9 +114,12 @@ export default function PortalPage() {
     setLoading(true)
     await supabase.from('appointments').insert({
       patient_id: patient.id, date: bookingDate,
-      time: bookingSlot.start_time, status: 'scheduled',
+      time: bookingSlot.time || bookingSlot.start_time, 
+      status: 'scheduled',
       notes: 'נקבע דרך פורטל מטופל'
     })
+    // עדכן slot כתפוס
+    await supabase.from('available_slots').update({ status: 'booked', patient_id: patient.id }).eq('id', bookingSlot.id)
     setBookingSuccess(true)
     setLoading(false)
     setBookingSlot(null)
@@ -388,14 +419,31 @@ export default function PortalPage() {
                 {availableSlots.length === 0 ? (
                   <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '10px' }}>אין שעות פנויות בתאריך זה</div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    {availableSlots.map((slot: any) => (
-                      <button key={slot.id} onClick={() => setBookingSlot(slot)}
-                        style={{ padding: '10px', border: `2px solid ${bookingSlot?.id === slot.id ? '#3eb8e5' : '#e2e8f0'}`, borderRadius: '8px', background: bookingSlot?.id === slot.id ? '#f0f9ff' : '#fff', fontSize: '13px', fontWeight: '700', color: bookingSlot?.id === slot.id ? '#3eb8e5' : '#1a3a5c', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
-                        {slot.start_time?.slice(0,5)}
-                      </button>
-                    ))}
-                  </div>
+                  {/* קבץ לפי סוג שירות */}
+                  {(() => {
+                    const grouped: Record<string, any[]> = {}
+                    availableSlots.forEach((s: any) => {
+                      const type = s.slot_type || 'clinic_private'
+                      const label = SERVICE_TYPE_LABELS[type]?.label || 'טיפול'
+                      if (!grouped[label]) grouped[label] = []
+                      grouped[label].push(s)
+                    })
+                    return Object.entries(grouped).map(([label, slots]) => (
+                      <div key={label} style={{ marginBottom: '14px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '8px' }}>
+                          {SERVICE_TYPE_LABELS[slots[0].slot_type]?.icon || '🏥'} {label}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                          {slots.map((slot: any) => (
+                            <button key={slot.id} onClick={() => setBookingSlot(slot)}
+                              style={{ padding: '10px', border: `2px solid ${bookingSlot?.id === slot.id ? '#3eb8e5' : '#e2e8f0'}`, borderRadius: '8px', background: bookingSlot?.id === slot.id ? '#f0f9ff' : '#fff', fontSize: '13px', fontWeight: '700', color: bookingSlot?.id === slot.id ? '#3eb8e5' : '#1a3a5c', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                              {slot.time?.slice(0,5)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  })()}
                 )}
               </div>
             )}
