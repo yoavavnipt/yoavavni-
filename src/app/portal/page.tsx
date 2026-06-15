@@ -3,6 +3,22 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { supabase, CLINIC } from '@/lib/supabase'
 
+const PAYMENT_LINKS: Record<string, { label: string; url: string }> = {
+  'clalit':     { label: 'טיפול גילון צורית', url: 'https://www.yoav-avni-clinic.com/_paylink/AZtZIkT9' },
+  'private':    { label: 'טיפול פרטי',        url: 'https://www.yoav-avni-clinic.com/_paylink/AZvCL5XV' },
+  'hydro':      { label: 'פיזיותרפיה במים',   url: 'https://www.yoav-avni-clinic.com/_paylink/AZa0Pm4K' },
+  'home':       { label: 'ביקור בית',          url: 'https://www.yoav-avni-clinic.com/_paylink/AZZsK6kw' },
+  'orthotic':   { label: 'מדרס מותאם אישית',  url: 'https://www.yoav-avni-clinic.com/_paylink/AZx5lGoD' },
+}
+
+function getPaymentLink(patient: any): { label: string; url: string } {
+  if (!patient) return PAYMENT_LINKS['private']
+  const funding = patient.funding_type || 'private'
+  if (funding === 'clalit' || funding === 'maccabi' || funding === 'meuhedet' || funding === 'leumit') 
+    return PAYMENT_LINKS['clalit']
+  return PAYMENT_LINKS['private']
+}
+
 type UserType = 'patient' | 'therapist'
 
 export default function PortalPage() {
@@ -401,7 +417,7 @@ export default function PortalPage() {
                   <div style={{ fontSize: '13px', fontWeight: '800', color: '#dc2626' }}>יתרת חוב</div>
                   <div style={{ fontSize: '22px', fontWeight: '900', color: '#991b1b' }}>₪{totalDebt}</div>
                 </div>
-                <a href={`https://wa.me/972${CLINIC.phone.replace(/^0/,'').replace(/-/g,'')}?text=שלום%20יואב,%20אני%20רוצה%20לסדר%20תשלום`} target="_blank" rel="noreferrer" style={{ padding: '10px 16px', background: '#dc2626', color: '#fff', borderRadius: '10px', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>שלח תשלום</a>
+                <a href={getPaymentLink(patient).url} target="_blank" rel="noreferrer" style={{ padding: '10px 16px', background: '#dc2626', color: '#fff', borderRadius: '10px', fontSize: '13px', fontWeight: '700', textDecoration: 'none' }}>💳 שלם עכשיו</a>
               </div>
             )}
             {billing.map((bill: any) => (
@@ -416,6 +432,22 @@ export default function PortalPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ===== PAYMENT LINKS ===== */}
+        {activeTab === 'billing' && (
+          <div style={{ background: '#fff', borderRadius: '14px', padding: '16px', marginTop: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '12px' }}>💳 לינקי תשלום</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {Object.entries(PAYMENT_LINKS).map(([key, link]) => (
+                <a key={key} href={link.url} target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', textDecoration: 'none', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#1a3a5c' }}>{link.label}</span>
+                  <span style={{ fontSize: '12px', color: '#3eb8e5', fontWeight: '700' }}>שלם →</span>
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
