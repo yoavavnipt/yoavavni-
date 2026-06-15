@@ -451,6 +451,28 @@ export default function PortalPage() {
           </div>
         )}
 
+        {/* ===== BANK TRANSFER ===== */}
+        {activeTab === 'billing' && (
+          <div style={{ background: '#fff', borderRadius: '14px', padding: '16px', marginTop: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '12px' }}>🏦 העברה בנקאית</div>
+            {[
+              { label: 'בנק', value: 'דיסקונט' },
+              { label: 'סניף', value: '174 — כרמיאל' },
+              { label: 'מספר חשבון', value: '80951491' },
+              { label: 'שם', value: 'יואב אבני' },
+            ].map((row, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < 3 ? '1px solid #f1f5f9' : 'none' }}>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{row.label}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: '#1a3a5c' }}>{row.value}</span>
+              </div>
+            ))}
+            <button onClick={() => { navigator.clipboard.writeText('בנק דיסקונט סניף 174 כרמיאל חשבון 80951491 יואב אבני'); alert('✅ הפרטים הועתקו!') }}
+              style={{ width: '100%', marginTop: '12px', padding: '10px', background: '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+              📋 העתק פרטי חשבון
+            </button>
+          </div>
+        )}
+
         {/* ===== VIDEOS TAB ===== */}
         {activeTab === 'videos' && (
           <div>
