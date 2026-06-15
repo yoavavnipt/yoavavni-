@@ -41,6 +41,7 @@ export default function Sidebar() {
       { href: '/content-calendar', icon: '🗓️', label: 'לוח תוכן',          show: canSocial },
     ]},
     { section: 'ניהול', items: [
+      { href: '/therapists',  icon: '👨‍⚕️', label: 'מטפלים',          show: isAdmin },
       { href: '/reports',     icon: '📈', label: 'דוחות',          show: isAdmin },
       { href: '/letters',     icon: '📝', label: 'מכתבים רפואיים', show: isAdmin || isTherapist },
       { href: '/reports-pdf', icon: '📄', label: 'דוחות PDF',      show: isAdmin },
