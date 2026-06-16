@@ -7,12 +7,9 @@ const TIMES = ['06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','
 const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי']
 
 const SLOT_TYPES: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  clinic_private:  { label: 'קליניקה פרטי',    color: '#1e40af', bg: '#dbeafe', icon: '🏥' },
-  clinic_reduced:  { label: 'קליניקה מוזל',     color: '#065f46', bg: '#d1fae5', icon: '💚' },
-  clinic_sports:   { label: 'קליניקה ספורטאים', color: '#7c3aed', bg: '#ede9fe', icon: '🏃' },
-  hydro:           { label: 'פיזיותרפיה במים',  color: '#0369a1', bg: '#e0f2fe', icon: '🏊' },
-  home_visit:      { label: 'ביקור בית',         color: '#92400e', bg: '#fef3c7', icon: '🏠' },
-  hybrid:          { label: 'היברידי',            color: '#be185d', bg: '#fce7f3', icon: '🔄' },
+  clinic:     { label: 'פיזיותרפיה בקליניקה', color: '#1e40af', bg: '#dbeafe', icon: '🏥' },
+  hydro:      { label: 'פיזיותרפיה במים',     color: '#0369a1', bg: '#e0f2fe', icon: '🏊' },
+  home_visit: { label: 'ביקור בית',            color: '#92400e', bg: '#fef3c7', icon: '🏠' },
 }
 
 // מטפלים נטענים מ-Supabase דינמית
@@ -39,12 +36,12 @@ export default function SlotsPage() {
   const [showBulk, setShowBulk] = useState(false)
   const [showAddSlot, setShowAddSlot] = useState<{date: string, time: string} | null>(null)
   const [selectedTherapist, setSelectedTherapist] = useState('yoav')
-  const [selectedType, setSelectedType] = useState('clinic_private')
+  const [selectedType, setSelectedType] = useState('clinic')
   const [filterTherapist, setFilterTherapist] = useState('all')
   const [bulk, setBulk] = useState({ 
     startTime: '06:15', endTime: '23:00', interval: '45', 
     days: [0,1,2,3,4], duration: '45',
-    therapist: 'yoav', slotType: 'clinic_private'
+    therapist: 'yoav', slotType: 'clinic'
   })
   const [saving, setSaving] = useState(false)
 

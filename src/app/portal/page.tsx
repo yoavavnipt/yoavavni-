@@ -12,19 +12,13 @@ const PAYMENT_LINKS: Record<string, { label: string; url: string }> = {
 }
 
 const SERVICE_LABELS: Record<string, { label: string; icon: string }> = {
-  'clinic_private': { label: 'טיפול פיזיותרפיה', icon: '🏥' },
-  'clinic_reduced': { label: 'טיפול פיזיותרפיה', icon: '🏥' },
-  'clinic_sports':  { label: 'טיפול פיזיותרפיה', icon: '🏥' },
-  'hydro':          { label: 'פיזיותרפיה במים',  icon: '🏊' },
-  'home_visit':     { label: 'ביקור בית',         icon: '🏠' },
-  'hybrid':         { label: 'טיפול היברידי',     icon: '🔄' },
+  'clinic':     { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+  'hydro':      { label: 'פיזיותרפיה במים',  icon: '🏊' },
+  'home_visit': { label: 'ביקור בית',         icon: '🏠' },
 }
 
-function getAllowedTypes(patient: any): string[] {
-  const f = patient?.funding_type || 'private'
-  if (f === 'sports') return ['clinic_sports', 'hydro', 'home_visit', 'hybrid']
-  if (['clalit','maccabi','meuhedet','leumit'].includes(f)) return ['clinic_reduced', 'hydro', 'home_visit', 'hybrid']
-  return ['clinic_private', 'hydro', 'home_visit', 'hybrid']
+function getAllowedTypes(_patient: any): string[] {
+  return ['clinic', 'hydro', 'home_visit']
 }
 
 function getPaymentLink(patient: any): { label: string; url: string } {
