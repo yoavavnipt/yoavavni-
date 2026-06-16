@@ -11,11 +11,27 @@ const PAYMENT_LINKS: Record<string, { label: string; url: string }> = {
   'orthotic':   { label: 'מדרס מותאם אישית',  url: 'https://www.yoav-avni-clinic.com/_paylink/AZx5lGoD' },
 }
 
+// מיפוי סוג slot לתצוגה למטופל (ללא תמחור)
+const SERVICE_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
+  'clinic_private':  { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+  'clinic_reduced':  { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+  'clinic_sports':   { label: 'טיפול פיזיותרפיה', icon: '🏥' },
+  'hydro':           { label: 'פיזיותרפיה במים',  icon: '🏊' },
+  'home_visit':      { label: 'ביקור בית',         icon: '🏠' },
+  'hybrid':          { label: 'טיפול היברידי',     icon: '🔄' },
+}
+
+function getAllowedSlotTypes(patient: any): string[] {
+  const funding = patient?.funding_type || 'private'
+  if (funding === 'sports') return ['clinic_sports', 'hydro', 'home_visit', 'hybrid']
+  if (['clalit','maccabi','meuhedet','leumit'].includes(funding)) return ['clinic_reduced', 'hydro', 'home_visit', 'hybrid']
+  return ['clinic_private', 'hydro', 'home_visit', 'hybrid']
+}
+
 function getPaymentLink(patient: any): { label: string; url: string } {
   if (!patient) return PAYMENT_LINKS['private']
   const funding = patient.funding_type || 'private'
-  if (funding === 'clalit' || funding === 'maccabi' || funding === 'meuhedet' || funding === 'leumit') 
-    return PAYMENT_LINKS['clalit']
+  if (['clalit','maccabi','meuhedet','leumit'].includes(funding)) return PAYMENT_LINKS['clalit']
   return PAYMENT_LINKS['private']
 }
 
