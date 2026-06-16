@@ -208,7 +208,7 @@ export default function SlotsPage() {
 
                   <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '3px', minHeight: '100px' }}>
                     {daySlots.map(slot => {
-                      const typeConfig = SLOT_TYPES[slot.slot_type] || SLOT_TYPES.clinic_private
+                      const typeConfig = SLOT_TYPES[slot.slot_type] || SLOT_TYPES.clinic
                       return (
                         <div key={slot.id} style={{
                           padding: '3px 5px', borderRadius: '5px', fontSize: '9px', fontWeight: '600',
@@ -254,7 +254,7 @@ export default function SlotsPage() {
               👤 תורים קבועים השבוע
             </div>
             {slots.filter(s => s.status === 'booked').map(slot => {
-              const typeConfig = SLOT_TYPES[slot.slot_type] || SLOT_TYPES.clinic_private
+              const typeConfig = SLOT_TYPES[slot.slot_type] || SLOT_TYPES.clinic
               return (
                 <div key={slot.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 18px', borderBottom: '1px solid #f8fafc' }}>
                   <div style={{ width: '4px', height: '36px', background: typeConfig.color, borderRadius: '2px' }} />
