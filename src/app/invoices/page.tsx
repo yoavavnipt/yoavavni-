@@ -58,6 +58,7 @@ export default function InvoicesPage() {
     payment_details: '',
     payment_date: new Date().toISOString().split('T')[0],
     notes: '',
+    allocation_number: '',
   })
 
   useEffect(() => { loadInvoices(); loadPatients() }, [])
@@ -108,6 +109,7 @@ export default function InvoicesPage() {
       payment_details: form.payment_details,
       payment_date: form.invoice_type !== 'invoice' ? form.payment_date : null,
       notes: form.notes,
+      allocation_number: form.allocation_number || null,
       status: 'issued',
       created_by: user.id || null,
     }).select().single()
@@ -129,7 +131,7 @@ export default function InvoicesPage() {
   }
 
   function resetForm() {
-    setForm({ invoice_type: 'invoice_receipt', patient_id: '', patient_name: '', patient_email: '', issue_date: new Date().toISOString().split('T')[0], service_date: new Date().toISOString().split('T')[0], service_description: 'טיפול פיזיותרפיה', quantity: 1, total_amount: '', payment_method: 'credit', payment_details: '', payment_date: new Date().toISOString().split('T')[0], notes: '' })
+    setForm({ invoice_type: 'invoice_receipt', patient_id: '', patient_name: '', patient_email: '', issue_date: new Date().toISOString().split('T')[0], service_date: new Date().toISOString().split('T')[0], service_description: 'טיפול פיזיותרפיה', quantity: 1, total_amount: '', payment_method: 'credit', payment_details: '', payment_date: new Date().toISOString().split('T')[0], notes: '', allocation_number: '' })
   }
 
   function selectPatient(p: any) {
@@ -297,6 +299,23 @@ export default function InvoicesPage() {
               </div>
             )}
 
+            {/* מספר הקצאה */}
+            {parseFloat(form.total_amount || '0') >= 5900 && (
+              <div style={{ background: '#fef9c3', borderRadius: '10px', padding: '14px', marginBottom: '14px', border: '1px solid #fde047' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#854d0e', marginBottom: '8px' }}>
+                  ⚠️ חשבונית מעל 5,000 ₪ — נדרש מספר הקצאה מרשות המסים
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input value={form.allocation_number} onChange={e => setForm(p => ({ ...p, allocation_number: e.target.value }))}
+                    placeholder="הכנס מספר הקצאה..." style={{ ...inp, flex: 1 }}/>
+                  <a href="https://www.gov.il/he/service/request-assignment-number-for-tax-invoice" target="_blank" rel="noreferrer"
+                    style={{ padding: '9px 14px', background: '#1a3a5c', color: '#fff', borderRadius: '8px', fontSize: '12px', fontWeight: '700', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    קבל מספר →
+                  </a>
+                </div>
+              </div>
+            )}
+
             <button onClick={saveInvoice} disabled={saving} style={{ width: '100%', padding: '13px', background: saving ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '800', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
               {saving ? '⏳ שומר...' : '✅ הנפק מסמך'}
             </button>
@@ -332,6 +351,7 @@ export default function InvoicesPage() {
                   <tr key={inv.id} style={{ borderBottom: '1px solid #f1f5f9', opacity: inv.status === 'cancelled' ? 0.5 : 1 }} onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
                     <td style={{ padding: '10px 12px', fontSize: '13px', fontWeight: '800', color: '#1a3a5c' }}>
                       #{inv.invoice_number}
+                      {inv.allocation_number && <div style={{ fontSize: '9px', color: '#065f46', fontWeight: '600' }}>הקצאה ✓</div>}
                       {inv.status === 'cancelled' && <div style={{ fontSize: '9px', color: '#dc2626', fontWeight: '600' }}>בוטל</div>}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
@@ -426,6 +446,13 @@ export default function InvoicesPage() {
                   </h1>
                   {printInvoice.status === 'cancelled' && <div style={{ color: '#dc2626', fontWeight: '700', fontSize: '14px', marginTop: '4px' }}>⚠️ מסמך זה בוטל — {printInvoice.cancel_reason}</div>}
                 </div>
+
+                {/* מספר הקצאה */}
+                {printInvoice.allocation_number && (
+                  <div style={{ textAlign: 'center', marginBottom: '12px', padding: '8px', background: '#f0fdf4', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    <span style={{ fontSize: '12px', color: '#065f46', fontWeight: '700' }}>מספר הקצאה: {printInvoice.allocation_number}</span>
+                  </div>
+                )}
 
                 {/* Client & Date */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', padding: '14px 0', borderBottom: '1px solid #e2e8f0' }}>
