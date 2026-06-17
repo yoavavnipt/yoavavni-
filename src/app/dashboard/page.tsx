@@ -22,7 +22,7 @@ const TASK_COLORS: Record<string, { bg: string; border: string; text: string; bt
   ok:      { bg: '#f0fdf4', border: '#bbf7d0', text: '#065f46', btn: '#16a34a' },
 }
 
-export default function ComplianceWidget() {
+function ComplianceWidget() {
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState<string | null>(null)
