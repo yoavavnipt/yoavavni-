@@ -42,6 +42,7 @@ export default function Sidebar() {
     ]},
     { section: 'ניהול', items: [
       { href: '/therapists',  icon: '👨‍⚕️', label: 'מטפלים',          show: isAdmin },
+      { href: '/invoices',     icon: '🧾', label: 'חשבוניות',         show: isAdmin || isSecretary },
       { href: '/reports',     icon: '📈', label: 'דוחות',          show: isAdmin },
       { href: '/letters',     icon: '📝', label: 'מכתבים רפואיים', show: isAdmin || isTherapist },
       { href: '/reports-pdf', icon: '📄', label: 'דוחות PDF',      show: isAdmin },
