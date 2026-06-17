@@ -3,7 +3,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useEffect, useState } from 'react'
 import { supabase, CLINIC } from '@/lib/supabase'
 
-const TIMES = ['06:15','07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','13:00','13:45','14:30','15:15','16:00','16:45','17:30','18:15','19:00','19:45','20:30','21:15','22:00','22:45']
+const TIMES = ['07:00','07:45','08:30','09:15','10:00','10:45','11:30','12:15','14:15','15:00','15:45','16:30','17:15','18:00','21:00','21:45','22:30']
 const DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי']
 
 const SLOT_TYPES: Record<string, { label: string; color: string; bg: string; icon: string }> = {
@@ -35,6 +35,9 @@ export default function SlotsPage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [showBulk, setShowBulk] = useState(false)
   const [showAddSlot, setShowAddSlot] = useState<{date: string, time: string} | null>(null)
+  const [slotCapacity, setSlotCapacity] = useState(1)
+  const [customTime, setCustomTime] = useState('')
+  const [useCustomTime, setUseCustomTime] = useState(false)
   const [selectedTherapist, setSelectedTherapist] = useState('yoav')
   const [selectedType, setSelectedType] = useState('clinic')
   const [filterTherapist, setFilterTherapist] = useState('all')
@@ -86,7 +89,8 @@ export default function SlotsPage() {
       therapist_name: therapists.find((t: any) => t.id === selectedTherapist)?.name || currentUser.name,
       therapist_id: selectedTherapist,
       slot_type: selectedType,
-      duration: 45, status: 'open'
+      duration: 45, status: 'open',
+      capacity: slotCapacity
     }])
     setShowAddSlot(null)
     loadSlots(weekDates)
@@ -287,10 +291,26 @@ export default function SlotsPage() {
               <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>שעה</label>
-                  <select style={{ ...inp, width: '100%' }} value={showAddSlot.time} onChange={e => setShowAddSlot({ ...showAddSlot, time: e.target.value })}>
-                    <option value="">בחר שעה</option>
-                    {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                    <button onClick={() => setUseCustomTime(false)} style={{ flex: 1, padding: '6px', border: `2px solid ${!useCustomTime ? '#1a3a5c' : '#e2e8f0'}`, borderRadius: '6px', background: !useCustomTime ? '#1a3a5c' : '#fff', color: !useCustomTime ? '#fff' : '#64748b', fontSize: '11px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>שעות קבועות</button>
+                    <button onClick={() => setUseCustomTime(true)} style={{ flex: 1, padding: '6px', border: `2px solid ${useCustomTime ? '#1a3a5c' : '#e2e8f0'}`, borderRadius: '6px', background: useCustomTime ? '#1a3a5c' : '#fff', color: useCustomTime ? '#fff' : '#64748b', fontSize: '11px', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>שעה חופשית</button>
+                  </div>
+                  {!useCustomTime ? (
+                    <select style={{ ...inp, width: '100%' }} value={showAddSlot.time} onChange={e => setShowAddSlot({ ...showAddSlot, time: e.target.value })}>
+                      <option value="">בחר שעה</option>
+                      {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  ) : (
+                    <input type="time" value={customTime} onChange={e => setCustomTime(e.target.value)} style={{ ...inp, width: '100%', boxSizing: 'border-box' }}/>
+                  )}
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>מספר מטופלים במקביל</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[1,2,3,4].map(n => (
+                      <button key={n} onClick={() => setSlotCapacity(n)} style={{ flex: 1, padding: '8px', border: `2px solid ${slotCapacity === n ? '#1a3a5c' : '#e2e8f0'}`, borderRadius: '6px', background: slotCapacity === n ? '#1a3a5c' : '#fff', color: slotCapacity === n ? '#fff' : '#64748b', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'Heebo, sans-serif' }}>{n}</button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '4px' }}>מטפל</label>
@@ -309,9 +329,9 @@ export default function SlotsPage() {
                     ))}
                   </div>
                 </div>
-                <button onClick={() => showAddSlot.time && addSlot(showAddSlot.date, showAddSlot.time)}
-                  disabled={!showAddSlot.time}
-                  style={{ width: '100%', padding: '12px', background: !showAddSlot.time ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: !showAddSlot.time ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
+                <button onClick={() => { const t = useCustomTime ? customTime : showAddSlot.time; if (t) addSlot(showAddSlot.date, t) }}
+                  disabled={!(useCustomTime ? customTime : showAddSlot.time)}
+                  style={{ width: '100%', padding: '12px', background: !(useCustomTime ? customTime : showAddSlot.time) ? '#94a3b8' : '#1a3a5c', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: !showAddSlot.time ? 'not-allowed' : 'pointer', fontFamily: 'Heebo, sans-serif' }}>
                   ✅ הוסף שעה
                 </button>
               </div>
