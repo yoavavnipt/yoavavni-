@@ -395,11 +395,15 @@ export default function InvoicesPage() {
               <div ref={printRef} style={{ padding: '48px', direction: 'rtl', fontFamily: 'Arial, sans-serif', fontSize: '13px', lineHeight: '1.6' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', paddingBottom: '20px', borderBottom: '3px solid #1a3a5c' }}>
-                  <div>
-                    <div style={{ fontSize: '32px', fontWeight: '900', color: '#1a3a5c', letterSpacing: '-1px', lineHeight: '1' }}>
-                      <span style={{ color: '#3eb8e5' }}>YOAV</span>AVNI
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <img src="/logo-full.png" alt="לוגו קליניקת יואב אבני" style={{ height: '80px', width: 'auto' }} />
+                    <div style={{ width: '90px', height: '90px', border: '3px solid #1a3a5c', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '8px' }}>
+                      <div style={{ fontSize: '9px', fontWeight: '700', color: '#1a3a5c', lineHeight: '1.3' }}>מסמך ממוחשב</div>
+                      <div style={{ fontSize: '11px', fontWeight: '900', color: '#1a3a5c', margin: '2px 0' }}>מאושר</div>
+                      <div style={{ fontSize: '8px', color: '#1a3a5c', lineHeight: '1.3' }}>חתום דיגיטלית</div>
+                      <div style={{ width: '60px', height: '1px', background: '#1a3a5c', margin: '3px 0' }}/>
+                      <div style={{ fontSize: '8px', color: '#1a3a5c' }}>YOAVAVNI</div>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>פיזיותרפיה | שיקום | אורתופדיה | פציעות ספורט</div>
                   </div>
                   <div style={{ textAlign: 'left', fontSize: '12px', color: '#374151' }}>
                     <div style={{ fontWeight: '700', fontSize: '14px', color: '#1a3a5c', marginBottom: '2px' }}>{CLINIC.name}</div>
